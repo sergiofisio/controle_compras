@@ -7,6 +7,7 @@ import { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { LoadingOverlay } from "@/components/layout/LoadingOverlay";
+import { Header } from "@/components/layout/Header";
 
 export const metadata: Metadata = {
   title: "Controle de Compras",
@@ -26,7 +27,12 @@ export default function RootLayout({
         <Providers>
           <div className="flex h-full">
             <Sidebar />
-            <main className="flex-1 overflow-y-auto bg-white">{children}</main>
+            <div>
+              <Header />
+              <main className="flex-1 overflow-y-auto bg-white">
+                {children}
+              </main>
+            </div>
           </div>
           <Toaster richColors />
           <LoadingOverlay />
