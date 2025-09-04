@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { categoryService } from "@/backend/services/categoryService";
 import { ZodError } from "zod";
 
-type RouteParams = { params: { id: string } };
-
 export async function GET(_: NextRequest, context: { params: { id: string } }) {
   try {
     const id = context.params.id;

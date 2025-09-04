@@ -3,32 +3,35 @@ import {
   findItemById,
   removeItem,
 } from "@/backend/services/itemService";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { ZodError } from "zod";
 
-type RouteParams = { params: { id: string } };
-
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  _: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const item = await findItemById(params.id);
+    const { id } = params;
+    const item = await findItemById(id);
     return NextResponse.json(item);
   } catch (error: any) {
-    return new NextResponse(error.message, { status: 404 });
+    return NextResponse.json({ message: error.message }, { status: 404 });
   }
 }
 
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
+    const { id } = params;
     const body = await request.json();
-    const updatedItem = await editItem(params.id, body);
+    const updatedItem = await editItem(id, body);
     return NextResponse.json(updatedItem);
   } catch (error: any) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        {
-          message: "Dados inválidos.",
-          details: error.flatten().fieldErrors,
-        },
+        { message: "Dados inválidos.", details: error.flatten().fieldErrors },
         { status: 400 }
       );
     }
@@ -45,11 +48,15 @@ export async function PUT(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  _: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    await removeItem(params.id);
+    const { id } = params;
+    await removeItem(id);
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
-    return new NextResponse(error.message, { status: 404 });
+    return NextResponse.json({ message: error.message }, { status: 404 });
   }
 }

@@ -1,31 +1,33 @@
+import { NextResponse, NextRequest } from "next/server";
 import { supermarketService } from "@/backend/services/supermarketService";
-import { createApiHandlers } from "../../_helpers/routeHandlers";
-import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-type RouteParams = { params: { id: string } };
-
-export async function GET(_: Request, { params }: RouteParams) {
+export async function GET(
+  _: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const supermarket = await supermarketService.findById(params.id);
+    const { id } = params;
+    const supermarket = await supermarketService.findById(id);
     return NextResponse.json(supermarket);
   } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 404 });
   }
 }
 
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
+    const { id } = params;
     const body = await request.json();
-    const updatedSupermarket = await supermarketService.edit(params.id, body);
+    const updatedSupermarket = await supermarketService.edit(id, body);
     return NextResponse.json(updatedSupermarket);
   } catch (error: any) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        {
-          message: "Dados inválidos.",
-          details: error.flatten().fieldErrors,
-        },
+        { message: "Dados inválidos.", details: error.flatten().fieldErrors },
         { status: 400 }
       );
     }
@@ -42,9 +44,13 @@ export async function PUT(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(_: Request, { params }: RouteParams) {
+export async function DELETE(
+  _: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    await supermarketService.remove(params.id);
+    const { id } = params;
+    await supermarketService.remove(id);
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 404 });

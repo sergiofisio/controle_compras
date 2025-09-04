@@ -1,25 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import {
   findPurchaseById,
   removePurchase,
 } from "@/backend/services/purchaseService";
 
-type RouteParams = { params: { id: string } };
-
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  _: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const purchase = await findPurchaseById(params.id);
+    const { id } = params;
+    const purchase = await findPurchaseById(id);
     return NextResponse.json(purchase);
   } catch (error: any) {
-    return new NextResponse(error.message, { status: 404 });
+    return NextResponse.json({ message: error.message }, { status: 404 });
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    await removePurchase(params.id);
+    const { id } = params;
+    await removePurchase(id);
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
-    return new NextResponse(error.message, { status: 404 });
+    return NextResponse.json({ message: error.message }, { status: 404 });
   }
 }
