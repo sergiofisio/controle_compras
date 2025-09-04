@@ -11,6 +11,7 @@ import {
   Ticket,
   ShoppingBasket,
 } from "lucide-react";
+import { NavLink } from "./NavLink";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -30,7 +31,7 @@ export function Navigation() {
         const Icon = item.icon;
         const isActive = pathname === item.href;
         return (
-          <Link
+          <NavLink
             key={item.href}
             href={item.href}
             className={cn(
@@ -40,7 +41,7 @@ export function Navigation() {
           >
             <Icon className="h-4 w-4" />
             {item.label}
-          </Link>
+          </NavLink>
         );
       })}
     </nav>

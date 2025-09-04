@@ -20,14 +20,18 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="h-full bg-gray-100" suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      className="h-screen bg-gray-100"
+      suppressHydrationWarning
+    >
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} antialiased h-screen`}
       >
         <Providers>
-          <div className="flex h-full">
+          <div className="flex h-full max-w-screen w-screen">
             <Sidebar />
-            <div>
+            <div className="w-full">
               <Header />
               <main className="flex-1 overflow-y-auto bg-white">
                 {children}
@@ -35,7 +39,6 @@ export default function RootLayout({
             </div>
           </div>
           <Toaster richColors />
-          <LoadingOverlay />
         </Providers>
       </body>
     </html>

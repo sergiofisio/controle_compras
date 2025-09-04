@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SpendingChart } from "@/components/dashboard/SpendingChart";
 import { DollarSign, ShoppingCart, CreditCard } from "lucide-react";
+import { LoadingManager } from "@/components/layout/LoadingManager";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
@@ -55,14 +56,6 @@ export default function Home() {
       averageTicket,
     };
   }, [purchases]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p>Carregando dashboard...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="p-4 md:p-8 space-y-6">
