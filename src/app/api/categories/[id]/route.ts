@@ -1,40 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { categoryService } from "@/backend/services/categoryService";
 import { ZodError } from "zod";
 
-export async function GET(_: NextRequest, context: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: any }) {
   try {
-    const { id } = context.params;
+    const { id } = params;
     const category = await categoryService.findById(id);
     return NextResponse.json(category);
-  } catch (error: any) {
-    return NextResponse.json({ message: error.message }, { status: 404 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Ocorreu um erro.";
+    return NextResponse.json({ message }, { status: 404 });
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function PUT(request: Request, { params }: { params: any }) {
   try {
-    const { id } = context.params;
+    const { id } = params;
     const body = await request.json();
     const updatedCategory = await categoryService.edit(id, body);
     return NextResponse.json(updatedCategory);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        {
-          message: "Dados inválidos.",
-          details: error.flatten().fieldErrors,
-        },
+        { message: "Dados inválidos.", details: error.flatten().fieldErrors },
         { status: 400 }
       );
     }
-    if (error.message.includes("já existe")) {
+    if (error instanceof Error && error.message.includes("já existe")) {
       return NextResponse.json({ message: error.message }, { status: 409 });
     }
-    if (error.message.includes("not found")) {
+    if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json({ message: error.message }, { status: 404 });
     }
     return NextResponse.json(
@@ -44,15 +39,13 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function DELETE(_: Request, { params }: { params: any }) {
   try {
-    const { id } = context.params;
+    const { id } = params;
     await categoryService.remove(id);
     return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
-    return NextResponse.json({ message: error.message }, { status: 404 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Ocorreu um erro.";
+    return NextResponse.json({ message }, { status: 404 });
   }
 }

@@ -2,6 +2,9 @@
 
 import { usePurchases, useDeletePurchase } from "@/hooks/usePurchases";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
 import {
   Accordion,
   AccordionContent,
@@ -17,7 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { PurchaseItemWithDetails } from "@/backend/type/type";
 
+// Helper para formatar moeda
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -45,27 +50,51 @@ export function PurchaseList() {
 
   if (isLoading) return <p>Carregando histórico de compras...</p>;
 
+  // MELHORIA: Tratamento do estado vazio
+  if (!purchases || purchases.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-12">
+        <p className="text-lg">Nenhuma compra registrada ainda.</p>
+        <p className="mt-2">Clique em "Registrar Nova Compra" para começar.</p>
+      </div>
+    );
+  }
+
   return (
     <Accordion type="single" collapsible className="w-full">
-      {purchases?.map((purchase) => (
+      {purchases.map((purchase) => (
         <AccordionItem value={purchase.id} key={purchase.id}>
           <AccordionTrigger>
-            <div className="flex justify-between w-full pr-4">
-              <span>{new Date(purchase.date).toLocaleDateString("pt-BR")}</span>
-              <span className="font-semibold">{purchase.supermarket.name}</span>
-              <span className="text-green-600 font-bold">
+            <div className="flex flex-col md:flex-row justify-between w-full pr-4 text-left md:text-center gap-2 md:gap-0">
+              {/* MELHORIA: Formatação de data com date-fns */}
+              <span className="md:w-1/3">
+                {format(new Date(purchase.date), "dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR,
+                })}
+              </span>
+              <span className="font-semibold md:w-1/3">
+                {purchase.supermarket.name}
+              </span>
+              <span className="text-green-600 font-bold md:w-1/3 md:text-right">
                 {formatCurrency(Number(purchase.totalValue))}
               </span>
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="flex justify-end mb-2">
+            <div className="flex justify-end mb-4">
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleDelete(purchase.id)}
+                disabled={
+                  deletePurchase.isPending &&
+                  deletePurchase.variables === purchase.id
+                }
               >
-                Deletar Compra
+                {deletePurchase.isPending &&
+                deletePurchase.variables === purchase.id
+                  ? "Deletando..."
+                  : "Deletar Compra"}
               </Button>
             </div>
             <Table>
@@ -79,7 +108,7 @@ export function PurchaseList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {purchase.items.map((pItem) => (
+                {purchase.items.map((pItem: PurchaseItemWithDetails) => (
                   <TableRow key={pItem.id}>
                     <TableCell>{pItem.item.name}</TableCell>
                     <TableCell>{pItem.item.mark.name}</TableCell>

@@ -4,10 +4,7 @@ import {
   removePurchase,
 } from "@/backend/services/purchaseService";
 
-export async function GET(
-  _: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_: NextRequest, { params }: { params: any }) {
   try {
     const { id } = params;
     const purchase = await findPurchaseById(id);
@@ -17,10 +14,7 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  _: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_: NextRequest, { params }: { params: any }) {
   try {
     const { id } = params;
     await removePurchase(id);

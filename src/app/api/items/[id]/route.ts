@@ -6,10 +6,7 @@ import {
 import { NextResponse, NextRequest } from "next/server";
 import { ZodError } from "zod";
 
-export async function GET(
-  _: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_: NextRequest, { params }: { params: any }) {
   try {
     const { id } = params;
     const item = await findItemById(id);
@@ -19,10 +16,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: any }) {
   try {
     const { id } = params;
     const body = await request.json();
@@ -48,10 +42,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_: NextRequest, { params }: { params: any }) {
   try {
     const { id } = params;
     await removeItem(id);
