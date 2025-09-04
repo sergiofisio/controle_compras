@@ -12,7 +12,6 @@ import type {
   Mark,
   Item,
   Purchase,
-  PurchaseItem,
 } from "@prisma/client";
 
 export const listSupermarkets = async (): Promise<Supermarket[]> => {

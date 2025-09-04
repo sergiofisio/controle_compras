@@ -7,6 +7,7 @@ export async function GET() {
     const categories = await categoryService.list();
     return NextResponse.json(categories);
   } catch (error: any) {
+    console.log({ error });
     return NextResponse.json(
       { message: "Erro interno do servidor." },
       { status: 500 }

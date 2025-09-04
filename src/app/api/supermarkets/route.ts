@@ -7,6 +7,7 @@ export async function GET() {
     const supermarkets = await supermarketService.list();
     return NextResponse.json(supermarkets);
   } catch (error: any) {
+    console.log({ error });
     return NextResponse.json(
       { message: "Erro interno do servidor." },
       { status: 500 }
