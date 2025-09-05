@@ -6,7 +6,6 @@ import Providers from "./providers";
 import { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { LoadingOverlay } from "@/components/layout/LoadingOverlay";
 import { Header } from "@/components/layout/Header";
 
 export const metadata: Metadata = {
