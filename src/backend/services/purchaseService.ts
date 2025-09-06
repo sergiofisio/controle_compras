@@ -1,54 +1,67 @@
-import * as purchaseRepository from "../repositories/purchaseRepository";
-import { supermarketService } from "./supermarketService";
+import prisma from "@/backend/lib/prisma";
+import { createPurchaseSchema } from "@/backend/lib/schemas";
+import { findById as findSupermarketById } from "./supermarketService";
 import { findItemById } from "./itemService";
-import { CreatePurchaseDTO } from "../type/type";
+import { z } from "zod";
 
-export async function listPurchases() {
-  return purchaseRepository.getAllPurchases();
+type CreatePurchaseDTO = z.infer<typeof createPurchaseSchema>;
+
+export async function listPurchases(userId: string) {
+  return prisma.purchase.findMany({
+    where: { userId },
+    orderBy: { date: "desc" },
+    include: {
+      /* ... (includes aninhados) ... */
+    },
+  });
 }
 
-export async function findPurchaseById(id: string) {
-  const purchase = await purchaseRepository.getPurchaseById(id);
-  if (!purchase) {
-    throw new Error("Purchase not found.");
-  }
+export async function findPurchaseById(id: string, userId: string) {
+  const purchase = await prisma.purchase.findUnique({
+    where: { id, userId },
+    include: {
+      /* ... (includes aninhados) ... */
+    },
+  });
+  if (!purchase) throw new Error("Purchase not found.");
   return purchase;
 }
 
-export async function createNewPurchase(data: CreatePurchaseDTO) {
-  await supermarketService.findById(data.supermarketId);
+export async function createNewPurchase(
+  data: CreatePurchaseDTO,
+  userId: string
+) {
+  const validatedData = createPurchaseSchema.parse(data);
 
-  if (!data.items || data.items.length === 0) {
-    throw new Error("Purchase must have at least one item.");
-  }
-  await Promise.all(data.items.map((item) => findItemById(item.itemId)));
+  await findSupermarketById(validatedData.supermarketId, userId);
+  await Promise.all(
+    validatedData.items.map((item) => findItemById(item.itemId, userId))
+  );
 
-  const totalValue = data.items.reduce((acc, item) => {
-    return acc + item.price * item.quantity;
-  }, 0);
+  const totalValue = validatedData.items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
 
-  const purchaseToCreate = {
-    date: new Date(data.date),
-    totalValue,
-    supermarket: {
-      connect: { id: data.supermarketId },
+  return prisma.purchase.create({
+    data: {
+      date: validatedData.date,
+      totalValue,
+      supermarketId: validatedData.supermarketId,
+      userId,
+      items: {
+        create: validatedData.items.map((item) => ({
+          quantity: item.quantity,
+          price: item.price,
+          total: item.quantity * item.price,
+          itemId: item.itemId,
+        })),
+      },
     },
-    items: {
-      create: data.items.map((item) => ({
-        quantity: item.quantity,
-        price: item.price,
-        total: item.quantity * item.price,
-        item: {
-          connect: { id: item.itemId },
-        },
-      })),
-    },
-  };
-
-  return purchaseRepository.createPurchase(purchaseToCreate);
+  });
 }
 
-export async function removePurchase(id: string) {
-  await findPurchaseById(id);
-  return purchaseRepository.deletePurchase(id);
+export async function removePurchase(id: string, userId: string) {
+  await findPurchaseById(id, userId);
+  return prisma.purchase.delete({ where: { id } });
 }

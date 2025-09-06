@@ -10,11 +10,14 @@ import {
 import { NamedEntityData } from "@/backend/type/type";
 import { useLoadingStore } from "@/store/loadingStore";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 export function useCategories() {
+  const { status } = useSession();
   return useQuery({
     queryKey: ["categories"],
     queryFn: listCategories,
+    enabled: status === "authenticated",
   });
 }
 

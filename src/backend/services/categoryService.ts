@@ -1,42 +1,76 @@
-// src/backend/services/categoryService.ts
-import { categoryRepository } from "../repositories/categoryRepository";
-import { createBaseService } from "./baseService";
-import { namedEntitySchema } from "../lib/schemas";
+import { Prisma } from "@prisma/client";
+import prisma from "@/backend/lib/prisma";
+import { namedEntitySchema } from "@/backend/lib/schemas";
 
-type CategoryCreateInput = { name: string };
-type CategoryUpdateInput = Partial<CategoryCreateInput>;
+export async function listCategories(userId: string) {
+  return prisma.category.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+  });
+}
 
-const baseService = createBaseService<CategoryCreateInput, CategoryUpdateInput>(
-  categoryRepository,
-  "Category"
-);
+export async function findById(id: string, userId: string) {
+  const category = await prisma.category.findUnique({
+    where: {
+      id,
+      userId,
+    },
+  });
 
-export const categoryService = {
-  ...baseService,
+  if (!category) {
+    throw new Error("Category not found.");
+  }
+  return category;
+}
 
-  async add(data: CategoryCreateInput) {
-    const validatedData = namedEntitySchema.parse(data);
-    try {
-      return await categoryRepository.create(validatedData);
-    } catch (error: any) {
-      if (error?.code === "P2002") {
-        throw new Error("Uma categoria com este nome já existe.");
-      }
-      throw error;
+export async function add(data: { name: string }, userId: string) {
+  const validatedData = namedEntitySchema.parse(data);
+
+  try {
+    return await prisma.category.create({
+      data: {
+        name: validatedData.name,
+        userId,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("Uma categoria com este nome já existe.");
     }
-  },
+    throw error;
+  }
+}
 
-  async edit(id: string, data: CategoryUpdateInput) {
-    const validatedData = namedEntitySchema.parse(data);
-    await baseService.findById(id);
+export async function edit(id: string, data: { name: string }, userId: string) {
+  const validatedData = namedEntitySchema.parse(data);
 
-    try {
-      return await categoryRepository.update(id, validatedData);
-    } catch (error: any) {
-      if (error?.code === "P2002") {
-        throw new Error("Uma categoria com este nome já existe.");
-      }
-      throw error;
+  await findById(id, userId);
+
+  try {
+    return await prisma.category.update({
+      where: { id },
+      data: {
+        name: validatedData.name,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("Uma categoria com este nome já existe.");
     }
-  },
-};
+    throw error;
+  }
+}
+
+export async function remove(id: string, userId: string) {
+  await findById(id, userId);
+
+  return prisma.category.delete({
+    where: { id },
+  });
+}

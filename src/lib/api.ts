@@ -13,6 +13,15 @@ import type {
   Item,
   Purchase,
 } from "@prisma/client";
+import { registerUserSchema } from "@/backend/lib/schemas";
+import z from "zod";
+
+export const registerUser = async (
+  data: z.infer<typeof registerUserSchema>
+) => {
+  const response = await apiClient.post("/register", data);
+  return response.data;
+};
 
 export const listSupermarkets = async (): Promise<Supermarket[]> => {
   const response = await apiClient.get("/supermarkets");

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { categoryService } from "@/backend/services/categoryService";
 import { ZodError } from "zod";
+import { getCurrentUser } from "@/lib/session";
+import { edit, findById, remove } from "@/backend/services/categoryService";
 
 export async function GET(_: Request, { params }: { params: any }) {
   try {
     const { id } = params;
-    const category = await categoryService.findById(id);
+    const user = await getCurrentUser();
+    if (!user?.id)
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
+    const category = await findById(id, user.id);
     return NextResponse.json(category);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Ocorreu um erro.";
@@ -16,8 +20,11 @@ export async function GET(_: Request, { params }: { params: any }) {
 export async function PUT(request: Request, { params }: { params: any }) {
   try {
     const { id } = params;
+    const user = await getCurrentUser();
+    if (!user?.id)
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
     const body = await request.json();
-    const updatedCategory = await categoryService.edit(id, body);
+    const updatedCategory = await edit(id, body, user.id);
     return NextResponse.json(updatedCategory);
   } catch (error) {
     if (error instanceof ZodError) {
@@ -42,7 +49,12 @@ export async function PUT(request: Request, { params }: { params: any }) {
 export async function DELETE(_: Request, { params }: { params: any }) {
   try {
     const { id } = params;
-    await categoryService.remove(id);
+
+    const user = await getCurrentUser();
+    if (!user?.id)
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
+
+    await remove(id, user.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Ocorreu um erro.";

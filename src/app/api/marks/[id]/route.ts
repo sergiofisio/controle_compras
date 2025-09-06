@@ -1,34 +1,44 @@
 import { NextResponse, NextRequest } from "next/server";
-import { markService } from "@/backend/services/markService";
+import * as markService from "@/backend/services/markService";
 import { ZodError } from "zod";
+import { getCurrentUser } from "@/lib/session";
 
-export async function GET(_: NextRequest, { params }: { params: any }) {
+type RouteContext = { params: { id: string } };
+
+export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
-    const { id } = params;
-    const mark = await markService.findById(id);
+    const user = await getCurrentUser();
+    if (!user?.id)
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
+
+    const mark = await markService.findById(params.id, user.id);
     return NextResponse.json(mark);
-  } catch (error: any) {
-    return NextResponse.json({ message: error.message }, { status: 404 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Ocorreu um erro.";
+    return NextResponse.json({ message }, { status: 404 });
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: any }) {
+export async function PUT(request: NextRequest, { params }: RouteContext) {
   try {
-    const { id } = params;
+    const user = await getCurrentUser();
+    if (!user?.id)
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
+
     const body = await request.json();
-    const updatedMark = await markService.edit(id, body);
+    const updatedMark = await markService.edit(params.id, body, user.id);
     return NextResponse.json(updatedMark);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
         { message: "Dados inválidos.", details: error.flatten().fieldErrors },
         { status: 400 }
       );
     }
-    if (error.message.includes("já existe")) {
+    if (error instanceof Error && error.message.includes("já existe")) {
       return NextResponse.json({ message: error.message }, { status: 409 });
     }
-    if (error.message.includes("not found")) {
+    if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json({ message: error.message }, { status: 404 });
     }
     return NextResponse.json(
@@ -38,12 +48,16 @@ export async function PUT(request: NextRequest, { params }: { params: any }) {
   }
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: any }) {
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
-    const { id } = params;
-    await markService.remove(id);
+    const user = await getCurrentUser();
+    if (!user?.id)
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
+
+    await markService.remove(params.id, user.id);
     return new NextResponse(null, { status: 204 });
-  } catch (error: any) {
-    return NextResponse.json({ message: error.message }, { status: 404 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Ocorreu um erro.";
+    return NextResponse.json({ message }, { status: 404 });
   }
 }

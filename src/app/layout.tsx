@@ -5,38 +5,27 @@ import "./globals.css";
 import Providers from "./providers";
 import { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
+
+import { AppLayout } from "@/components/layout/AppLayout";
 
 export const metadata: Metadata = {
   title: "Controle de Compras",
   description: "Gerencie suas compras de forma inteligente.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
   return (
-    <html
-      lang="pt-BR"
-      className="h-screen bg-gray-100"
-      suppressHydrationWarning
-    >
+    <html lang="pt-BR" className="h-full bg-gray-100">
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} antialiased h-screen`}
+        className={`${GeistSans.variable} ${GeistMono.variable} antialiased h-full`}
+        suppressHydrationWarning
       >
         <Providers>
-          <div className="flex h-full max-w-screen w-screen">
-            <Sidebar />
-            <div className="w-full">
-              <Header />
-              <main className="flex-1 overflow-y-auto bg-white">
-                {children}
-              </main>
-            </div>
-          </div>
+          <AppLayout>{children}</AppLayout>
           <Toaster richColors />
         </Providers>
       </body>

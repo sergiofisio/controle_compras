@@ -1,42 +1,49 @@
-// src/backend/services/markService.ts
-import { namedEntitySchema } from "../lib/schemas";
-import { markRepository } from "../repositories/markRepository";
-import { createBaseService } from "./baseService";
 import { Prisma } from "@prisma/client";
+import prisma from "@/backend/lib/prisma";
+import { namedEntitySchema } from "@/backend/lib/schemas";
 
-type MarkCreateInput = Prisma.MarkCreateInput;
-type MarkUpdateInput = Prisma.MarkUpdateInput;
+export async function listMarks(userId: string) {
+  return prisma.mark.findMany({ where: { userId }, orderBy: { name: "asc" } });
+}
 
-const baseService = createBaseService<MarkCreateInput, MarkUpdateInput>(
-  markRepository,
-  "Mark"
-);
+export async function findById(id: string, userId: string) {
+  const mark = await prisma.mark.findUnique({ where: { id, userId } });
+  if (!mark) throw new Error("Mark not found.");
+  return mark;
+}
 
-export const markService = {
-  ...baseService,
-
-  async add(data: MarkCreateInput) {
-    const validatedData = namedEntitySchema.parse(data);
-    try {
-      return await markRepository.create(validatedData);
-    } catch (error: any) {
-      if (error?.code === "P2002") {
-        throw new Error("Uma marca com este nome já existe.");
-      }
-      throw error;
+export async function add(data: { name: string }, userId: string) {
+  const validatedData = namedEntitySchema.parse(data);
+  try {
+    return await prisma.mark.create({ data: { ...validatedData, userId } });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("Uma marca com este nome já existe.");
     }
-  },
+    throw error;
+  }
+}
 
-  async edit(id: string, data: MarkUpdateInput) {
-    const validatedData = namedEntitySchema.partial().parse(data);
-    await baseService.findById(id);
-    try {
-      return await markRepository.update(id, validatedData);
-    } catch (error: any) {
-      if (error?.code === "P2002") {
-        throw new Error("Uma marca com este nome já existe.");
-      }
-      throw error;
+export async function edit(id: string, data: { name: string }, userId: string) {
+  const validatedData = namedEntitySchema.parse(data);
+  await findById(id, userId);
+  try {
+    return await prisma.mark.update({ where: { id }, data: validatedData });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("Uma marca com este nome já existe.");
     }
-  },
-};
+    throw error;
+  }
+}
+
+export async function remove(id: string, userId: string) {
+  await findById(id, userId);
+  return prisma.mark.delete({ where: { id } });
+}

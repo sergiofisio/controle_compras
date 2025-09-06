@@ -5,11 +5,14 @@ import { listItems, createItem, updateItem, deleteItem } from "@/lib/api";
 import { ItemCreateData } from "@/backend/type/type";
 import { useLoadingStore } from "@/store/loadingStore";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 export function useItems() {
+  const { status } = useSession();
   return useQuery({
     queryKey: ["items"],
     queryFn: listItems,
+    enabled: status === "authenticated",
   });
 }
 

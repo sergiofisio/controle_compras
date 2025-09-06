@@ -6,11 +6,14 @@ import { listMarks, createMark, updateMark, deleteMark } from "@/lib/api";
 import { NamedEntityData } from "@/backend/type/type";
 import { useLoadingStore } from "@/store/loadingStore";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 export function useMarks() {
+  const { status } = useSession();
   return useQuery({
     queryKey: ["marks"],
     queryFn: listMarks,
+    enabled: status === "authenticated",
   });
 }
 

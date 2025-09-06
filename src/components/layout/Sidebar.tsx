@@ -1,6 +1,7 @@
 "use client";
 import { Navigation } from "./Navigation";
 import Image from "next/image";
+import { UserStatus } from "./UserStatus";
 
 export function Sidebar() {
   return (
@@ -17,6 +18,7 @@ export function Sidebar() {
         <h2 className="uppercase font-bold">Controle de compras</h2>
       </div>
       <Navigation />
+      <UserStatus />
     </aside>
   );
 }

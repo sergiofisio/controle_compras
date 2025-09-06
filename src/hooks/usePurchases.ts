@@ -11,11 +11,14 @@ import {
 import { PurchaseCreateData } from "@/backend/type/type";
 import { useLoadingStore } from "@/store/loadingStore";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 export function usePurchases() {
+  const { status } = useSession();
   return useQuery({
     queryKey: ["purchases"],
     queryFn: listPurchases,
+    enabled: status === "authenticated",
   });
 }
 

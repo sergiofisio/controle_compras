@@ -1,10 +1,15 @@
+import { add, listCategories } from "@/backend/services/categoryService";
+import { getCurrentUser } from "@/lib/session";
 import { NextResponse } from "next/server";
-import { categoryService } from "@/backend/services/categoryService";
 import { ZodError } from "zod";
 
 export async function GET() {
   try {
-    const categories = await categoryService.list();
+    const user = await getCurrentUser();
+    if (!user?.id) {
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
+    }
+    const categories = await listCategories(user.id);
     return NextResponse.json(categories);
   } catch (error: any) {
     console.log({ error });
@@ -17,8 +22,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user?.id) {
+      return NextResponse.json({ message: "Não autorizado." }, { status: 401 });
+    }
+
     const body = await request.json();
-    const newCategory = await categoryService.add(body);
+    const newCategory = await add(body, user.id);
     return NextResponse.json(newCategory, { status: 201 });
   } catch (error: any) {
     if (error instanceof ZodError) {
