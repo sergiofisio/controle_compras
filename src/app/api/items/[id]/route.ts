@@ -3,9 +3,7 @@ import * as itemService from "@/backend/services/itemService";
 import { getCurrentUser } from "@/lib/session";
 import { ZodError } from "zod";
 
-type RouteContext = { params: { id: string } };
-
-export async function GET(request: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, { params }: any) {
   try {
     const user = await getCurrentUser();
     if (!user?.id)
@@ -19,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteContext) {
+export async function PUT(request: NextRequest, { params }: any) {
   try {
     const user = await getCurrentUser();
     if (!user?.id)
@@ -48,7 +46,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteContext) {
+export async function DELETE(request: NextRequest, { params }: any) {
   try {
     const user = await getCurrentUser();
     if (!user?.id)
