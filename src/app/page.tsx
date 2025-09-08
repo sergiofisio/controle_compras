@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SpendingChart } from "@/components/dashboard/SpendingChart";
 import { DollarSign, ShoppingCart, CreditCard } from "lucide-react";
-import { LoadingManager } from "@/components/layout/LoadingManager";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
@@ -18,7 +17,7 @@ const formatCurrency = (value: number) => {
 };
 
 export default function Home() {
-  const { data: purchases, isLoading } = usePurchases();
+  const { data: purchases } = usePurchases();
 
   const stats = useMemo(() => {
     if (!purchases) {

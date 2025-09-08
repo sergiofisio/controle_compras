@@ -2,14 +2,20 @@
 "use client";
 
 import { Control } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
 type FieldType = "email" | "password" | "text";
 
 interface CustomFormFieldProps {
-  control: Control<any>; 
+  control: Control<any>;
   name: string;
   label: string;
   placeholder?: string;
@@ -23,7 +29,6 @@ export function CustomFormField({
   placeholder,
   type = "text",
 }: CustomFormFieldProps) {
-  
   return (
     <FormField
       control={control}

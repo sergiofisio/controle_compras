@@ -6,7 +6,7 @@ import { Header } from "./Header";
 import { ReactNode } from "react";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   if (status === "loading") {
     return (
