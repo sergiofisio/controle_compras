@@ -4,6 +4,7 @@ export const createItem = (data: {
   name: string;
   categoryId: string;
   markId: string;
+  userId: string;
 }) => prisma.item.create({ data });
 
 export const getAllItems = () =>
@@ -26,10 +27,11 @@ export const getItemById = (id: string) =>
 
 export const updateItem = (
   id: string,
-  data: { name?: string; categoryId?: string; markId?: string }
+  data: { name?: string; categoryId?: string; markId?: string },
+  userId: string
 ) =>
   prisma.item.update({
-    where: { id },
+    where: { id, userId },
     data,
   });
 
