@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import * as purchaseService from "@/backend/services/purchaseService";
 import { getCurrentUser } from "@/lib/session";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = any;
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {

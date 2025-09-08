@@ -3,7 +3,7 @@ import * as supermarketService from "@/backend/services/supermarketService";
 import { getCurrentUser } from "@/lib/session";
 import { ZodError } from "zod";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = any;
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
