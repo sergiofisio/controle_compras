@@ -1,105 +1,38 @@
 "use client";
 
-import { useMemo } from "react";
 import Link from "next/link";
-import { usePurchases } from "@/hooks/usePurchases";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { SpendingChart } from "@/components/dashboard/SpendingChart";
-import { DollarSign, ShoppingCart, CreditCard } from "lucide-react";
+import { AnimatedPage } from "@/components/AnimatedPage";
+import { useI18n } from "@/i18n";
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-};
-
-export default function Home() {
-  const { data: purchases } = usePurchases();
-
-  const stats = useMemo(() => {
-    if (!purchases) {
-      return {
-        totalSpentThisMonth: 0,
-        purchasesThisMonth: 0,
-        averageTicket: 0,
-      };
-    }
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const purchasesThisMonth = purchases.filter((p) => {
-      const purchaseDate = new Date(p.date);
-      return (
-        purchaseDate.getMonth() === currentMonth &&
-        purchaseDate.getFullYear() === currentYear
-      );
-    });
-
-    const totalSpentThisMonth = purchasesThisMonth.reduce(
-      (acc, p) => acc + Number(p.totalValue),
-      0
-    );
-    const averageTicket =
-      purchasesThisMonth.length > 0
-        ? totalSpentThisMonth / purchasesThisMonth.length
-        : 0;
-
-    return {
-      totalSpentThisMonth,
-      purchasesThisMonth: purchasesThisMonth.length,
-      averageTicket,
-    };
-  }, [purchases]);
-
+export default function HomePage() {
+  const { t } = useI18n();
   return (
-    <div className="p-4 md:p-8 space-y-6">
-      <div className="flex flex-wrap gap-4 justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Button asChild>
-          <Link href="/purchases/new">Registrar Nova Compra</Link>
-        </Button>
-      </div>
+    <main className="min-h-screen bg-linear-to-b from-slate-50 to-blue-50 px-6 py-10">
+      <AnimatedPage className="mx-auto flex min-h-[80vh] w-full max-w-4xl flex-col items-center justify-center gap-7 text-center">
+        <span className="rounded-full border border-blue-200 bg-blue-100 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+          {t("home.badge")}
+        </span>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="Total Gasto (Mês Atual)"
-          value={formatCurrency(stats.totalSpentThisMonth)}
-          icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-        />
-        <StatCard
-          title="Nº de Compras (Mês Atual)"
-          value={stats.purchasesThisMonth}
-          icon={<ShoppingCart className="h-4 w-4 text-muted-foreground" />}
-        />
-        <StatCard
-          title="Ticket Médio (Mês Atual)"
-          value={formatCurrency(stats.averageTicket)}
-          icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
-        />
-      </div>
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl">{t("home.title")}</h1>
+        <p className="max-w-2xl text-base text-slate-600 md:text-lg">
+          {t("home.subtitle")}
+        </p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Visão Geral de Gastos Mensais</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {purchases && purchases.length > 0 ? (
-            <SpendingChart purchases={purchases} />
-          ) : (
-            <div className="text-center text-gray-500 py-12">
-              <p>Não há dados de compras para exibir o gráfico.</p>
-              <p className="text-sm mt-2">
-                Comece registrando uma nova compra.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow"
+            href="/login"
+          >
+            {t("home.login")}
+          </Link>
+          <Link
+            className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700"
+            href="/register"
+          >
+            {t("home.register")}
+          </Link>
+        </div>
+      </AnimatedPage>
+    </main>
   );
 }

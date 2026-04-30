@@ -1,15 +1,39 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SessionProvider } from "next-auth/react";
-import { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { Provider } from "react-redux";
+import { store } from "@/features/store";
+import { AppToaster } from "@/components/ui/AppToaster";
+import { GlobalLoadingIndicator } from "@/components/ui/GlobalLoadingIndicator";
+import { I18nProvider } from "@/i18n";
 
-const queryClient = new QueryClient();
+export function Providers({ children }: { children: React.ReactNode }) {
+  const [pendingCount, setPendingCount] = useState(0);
 
-export default function Providers({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = async (...args: Parameters<typeof fetch>) => {
+      setPendingCount((current) => current + 1);
+      try {
+        return await originalFetch(...args);
+      } finally {
+        setPendingCount((current) => Math.max(0, current - 1));
+      }
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
   return (
-    <SessionProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </SessionProvider>
+    <I18nProvider>
+      <Provider store={store}>
+        {children}
+        <GlobalLoadingIndicator isLoading={pendingCount > 0} />
+        <AppToaster />
+      </Provider>
+    </I18nProvider>
   );
 }
