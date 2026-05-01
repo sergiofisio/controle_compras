@@ -28,6 +28,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Production
     env:
       DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || '/var/www/controle_compras' }}
       PM2_NAME: ${{ vars.VPS_PM2_NAME || 'controle-compras' }}

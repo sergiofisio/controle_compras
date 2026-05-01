@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getJson } from "@/lib/http";
 
-export type Family = { id: string; name: string; role: string };
+export type Family = { id: string; name: string; role: string; inviteCode?: string };
 
 export function useFamilies() {
   const [families, setFamilies] = useState<Family[]>([]);

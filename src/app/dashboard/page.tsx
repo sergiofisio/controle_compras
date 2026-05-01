@@ -27,6 +27,7 @@ type DashboardTab = "overview" | "lists" | "purchase";
 type Analytics = { totalSpent?: number; purchasesCount?: number; priceVariationPercent?: number } | null;
 type BrandSummary = { id: string; name: string; categoryId: string | null };
 type ProductSuggestion = { name: string; categoryId: string | null; brandId: string | null; unit: string };
+type FamilyMemberSummary = { id: string; userId: string; name: string; email: string; role: "owner" | "member" };
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -59,6 +60,8 @@ export default function DashboardPage() {
   const [newBrandCategoryId, setNewBrandCategoryId] = useState("");
   const [deletingListId, setDeletingListId] = useState<string | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMemberSummary[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
 
   const [inviteCode, setInviteCode] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -74,6 +77,9 @@ export default function DashboardPage() {
     getJson<{ lists: ShoppingList[] }>(`/api/lists?familyId=${familyId}`).then((d) => setLists(d.lists || []));
     getJson<Analytics>(`/api/analytics?familyId=${familyId}`).then(setAnalytics);
     getJson<{ brands: BrandSummary[] }>(`/api/brands?familyId=${familyId}`).then((d) => setAllBrands(d.brands || []));
+    getJson<{ members: FamilyMemberSummary[] }>(`/api/families/members?familyId=${familyId}`)
+      .then((d) => setFamilyMembers(d.members || []))
+      .catch(() => setFamilyMembers([]));
   }, [familyId]);
 
   const effectiveSelectedListId = lists.some((list) => list.id === selectedListId) ? selectedListId : lists[0]?.id || "";
@@ -378,9 +384,32 @@ export default function DashboardPage() {
     purchase: { title: t("dashboard.purchase.title"), subtitle: t("dashboard.purchase.subtitle") },
   };
   const currentMeta = tabMeta[activeTab];
+  const activeFamily = useMemo(() => families.find((family) => family.id === familyId) ?? null, [families, familyId]);
+  const filteredMembers = useMemo(() => {
+    const query = memberSearch.trim().toLowerCase();
+    if (!query) return familyMembers;
+    return familyMembers.filter((member) => {
+      const name = member.name.toLowerCase();
+      const email = member.email.toLowerCase();
+      return name.includes(query) || email.includes(query);
+    });
+  }, [familyMembers, memberSearch]);
   useEffect(() => {
     document.title = `${currentMeta.title} | ${t("dashboard.docTitleSuffix")}`;
   }, [currentMeta.title, t]);
+
+  async function copyMemberEmail(email: string) {
+    if (!email) {
+      toast.error("Membro sem e-mail cadastrado.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(email);
+      toast.success("E-mail copiado.");
+    } catch {
+      toast.error("Nao foi possivel copiar o e-mail.");
+    }
+  }
 
   return (
     <main className="min-h-screen bg-linear-to-b from-slate-50 to-blue-50 p-4 md:p-6">
@@ -392,45 +421,90 @@ export default function DashboardPage() {
             <ContextHeader title={currentMeta.title} subtitle={currentMeta.subtitle} familyId={familyId} families={families} setFamilyId={setFamilyId} email={user?.email ?? ""} />
 
             {activeTab === "overview" && (
-              <>
-                <section className="grid gap-4 md:grid-cols-3">
-                  <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
-                    <p className="text-sm text-slate-500">{t("dashboard.totalSpent")}</p>
-                    <p className="text-2xl font-bold text-slate-900">R$ {analytics?.totalSpent?.toFixed?.(2) ?? "0,00"}</p>
-                  </motion.div>
-                  <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
-                    <p className="text-sm text-slate-500">{t("dashboard.purchases")}</p>
-                    <p className="text-2xl font-bold text-slate-900">{analytics?.purchasesCount ?? 0}</p>
-                  </motion.div>
-                  <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
-                    <p className="text-sm text-slate-500">{t("dashboard.itemsInList")}</p>
-                    <p className="text-2xl font-bold text-slate-900">{totalItems}</p>
-                  </motion.div>
-                </section>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <PriceVariationCard value={analytics?.priceVariationPercent ?? 0} />
-                </div>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <h2 className="text-lg font-semibold text-slate-900">{t("dashboard.shareFamily")}</h2>
-                  <div className="mt-3 space-y-3">
-                    <div className="flex gap-2">
-                      <AppButton type="button" onClick={generateInvite} loading={generatingInvite}>
-                        {t("dashboard.generateCode")}
-                      </AppButton>
-                      {inviteCode && <span className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{inviteCode}</span>}
+              <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
+                <aside className="xl:sticky xl:top-24 xl:h-fit">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Membros da familia</h2>
+                    <AppInput
+                      className="mt-3"
+                      placeholder="Buscar membro por nome ou e-mail"
+                      value={memberSearch}
+                      onChange={(e) => setMemberSearch(e.target.value)}
+                    />
+                    <div className="mt-3 space-y-2">
+                      {filteredMembers.length === 0 ? (
+                        <p className="text-sm text-slate-500">Nenhum membro encontrado.</p>
+                      ) : (
+                        filteredMembers.map((member) => (
+                          <div key={member.id} className="rounded-xl border border-slate-200 bg-slate-50 p-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{member.name}</p>
+                                <p className="text-xs text-slate-600">{member.email}</p>
+                              </div>
+                              <AppButton
+                                type="button"
+                                variant="ghost"
+                                className="px-2 py-1 text-xs"
+                                onClick={() => copyMemberEmail(member.email)}
+                              >
+                                Copiar
+                              </AppButton>
+                            </div>
+                            <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">
+                              {member.role === "owner" ? "Dono" : "Membro"}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <AppInput placeholder={t("dashboard.enterCodePlaceholder")} value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
-                      <AppButton type="button" variant="secondary" onClick={joinFamily} loading={joiningFamily}>
-                        {t("dashboard.enter")}
-                      </AppButton>
-                    </div>
-                    {familyMessage && <p className="text-sm text-slate-600">{familyMessage}</p>}
                   </div>
-                </section>
-              </>
+                </aside>
+
+                <div className="space-y-4">
+                  <section className="grid gap-4 md:grid-cols-3">
+                    <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
+                      <p className="text-sm text-slate-500">{t("dashboard.totalSpent")}</p>
+                      <p className="text-2xl font-bold text-slate-900">R$ {analytics?.totalSpent?.toFixed?.(2) ?? "0,00"}</p>
+                    </motion.div>
+                    <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
+                      <p className="text-sm text-slate-500">{t("dashboard.purchases")}</p>
+                      <p className="text-2xl font-bold text-slate-900">{analytics?.purchasesCount ?? 0}</p>
+                    </motion.div>
+                    <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
+                      <p className="text-sm text-slate-500">{t("dashboard.itemsInList")}</p>
+                      <p className="text-2xl font-bold text-slate-900">{totalItems}</p>
+                    </motion.div>
+                  </section>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <PriceVariationCard value={analytics?.priceVariationPercent ?? 0} />
+                  </div>
+
+                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h2 className="text-lg font-semibold text-slate-900">{t("dashboard.shareFamily")}</h2>
+                    <div className="mt-3 space-y-3">
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                        <p className="text-xs uppercase tracking-wide text-emerald-700">Codigo da familia atual</p>
+                        <p className="mt-1 text-lg font-bold text-emerald-900">{activeFamily?.inviteCode || "--"}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <AppButton type="button" onClick={generateInvite} loading={generatingInvite}>
+                          {t("dashboard.generateCode")}
+                        </AppButton>
+                        {inviteCode && <span className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{inviteCode}</span>}
+                      </div>
+                      <div className="flex gap-2">
+                        <AppInput placeholder={t("dashboard.enterCodePlaceholder")} value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
+                        <AppButton type="button" variant="secondary" onClick={joinFamily} loading={joiningFamily}>
+                          {t("dashboard.enter")}
+                        </AppButton>
+                      </div>
+                      {familyMessage && <p className="text-sm text-slate-600">{familyMessage}</p>}
+                    </div>
+                  </section>
+                </div>
+              </div>
             )}
 
             {activeTab === "lists" && (
