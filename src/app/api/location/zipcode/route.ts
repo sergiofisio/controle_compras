@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
+import { apiT } from "@/i18n/api-translate";
 
 export async function GET(req: import("next/server").NextRequest) {
   const country = String(req.nextUrl.searchParams.get("country") || "").toUpperCase();
   const zipcode = String(req.nextUrl.searchParams.get("zipcode") || "").trim();
   if (!country || !zipcode) {
-    return NextResponse.json({ error: "country e zipcode sao obrigatorios" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.countryZipRequired") }, { status: 400 });
   }
 
   if (country !== "BR") {
-    return NextResponse.json({ address: null, message: "Autopreenchimento disponivel apenas para CEP do Brasil no momento" });
+    return NextResponse.json({ address: null, message: apiT(req, "api.zipOnlyBrazil") });
   }
 
   const cleanZip = zipcode.replace(/\D/g, "");
   if (cleanZip.length !== 8) {
-    return NextResponse.json({ error: "CEP invalido" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.invalidPostalCode") }, { status: 400 });
   }
 
   try {
@@ -22,7 +23,7 @@ export async function GET(req: import("next/server").NextRequest) {
       cache: "no-store",
     });
     if (!response.ok) {
-      return NextResponse.json({ error: "Falha ao consultar CEP" }, { status: 502 });
+      return NextResponse.json({ error: apiT(req, "api.zipLookupFailed") }, { status: 502 });
     }
     const data = (await response.json()) as {
       erro?: boolean;
@@ -33,7 +34,7 @@ export async function GET(req: import("next/server").NextRequest) {
       complemento?: string;
     };
     if (data.erro) {
-      return NextResponse.json({ error: "CEP nao encontrado" }, { status: 404 });
+      return NextResponse.json({ error: apiT(req, "api.zipNotFound") }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -46,6 +47,6 @@ export async function GET(req: import("next/server").NextRequest) {
       },
     });
   } catch {
-    return NextResponse.json({ error: "Erro ao consultar servico de CEP" }, { status: 502 });
+    return NextResponse.json({ error: apiT(req, "api.zipServiceError") }, { status: 502 });
   }
 }

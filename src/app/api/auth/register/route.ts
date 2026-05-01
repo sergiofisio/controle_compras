@@ -7,6 +7,7 @@ import { FamilyMember } from "@/server/db/entities/FamilyMember";
 import { signSession } from "@/server/auth/jwt";
 import { logAccess } from "@/server/logging/audit";
 import { sessionCookieOptions } from "@/server/auth/cookies";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ export async function POST(req: import("next/server").NextRequest) {
   const { name, email, password, familyName, familyCode } = body;
   const normalizedEmail = String(email).trim().toLowerCase();
   if (!name || !email || !password) {
-    return NextResponse.json({ error: "Campos obrigatorios ausentes" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.registerMissingFields") }, { status: 400 });
   }
 
   const db = await ensureDb();
@@ -28,7 +29,7 @@ export async function POST(req: import("next/server").NextRequest) {
   const memberRepo = db.getRepository(FamilyMember);
 
   const exists = await userRepo.findOne({ where: { email: normalizedEmail } });
-  if (exists) return NextResponse.json({ error: "Email ja cadastrado" }, { status: 409 });
+  if (exists) return NextResponse.json({ error: apiT(req, "api.emailTaken") }, { status: 409 });
 
   const passwordHash = await bcrypt.hash(password, 10);
   const isAdmin = normalizedEmail === String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
@@ -40,10 +41,10 @@ export async function POST(req: import("next/server").NextRequest) {
   if (familyCode) {
     family = await familyRepo.findOne({ where: { inviteCode: String(familyCode).trim().toUpperCase() } });
     if (!family) {
-      return NextResponse.json({ error: "Codigo da familia invalido" }, { status: 400 });
+      return NextResponse.json({ error: apiT(req, "api.invalidFamilyCode") }, { status: 400 });
     }
   } else {
-    if (!familyName) return NextResponse.json({ error: "Nome da familia obrigatorio quando nao informar codigo" }, { status: 400 });
+    if (!familyName) return NextResponse.json({ error: apiT(req, "api.familyNameRequiredNoCode") }, { status: 400 });
     let code = buildFamilyCode();
     for (let i = 0; i < 5; i += 1) {
       const taken = await familyRepo.findOne({ where: { inviteCode: code } });

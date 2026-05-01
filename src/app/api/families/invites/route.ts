@@ -5,19 +5,20 @@ import { ensureDb } from "@/server/db/data-source";
 import { getSessionFromRequest } from "@/server/auth/session";
 import { FamilyMember } from "@/server/db/entities/FamilyMember";
 import { FamilyInvite } from "@/server/db/entities/FamilyInvite";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
 export async function POST(req: import("next/server").NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: apiT(req, "api.unauthorized") }, { status: 401 });
 
   const { familyId } = await req.json();
-  if (!familyId) return NextResponse.json({ error: "familyId obrigatorio" }, { status: 400 });
+  if (!familyId) return NextResponse.json({ error: apiT(req, "api.familyIdRequired") }, { status: 400 });
 
   const db = await ensureDb();
   const member = await db.getRepository(FamilyMember).findOne({ where: { familyId, userId: session.userId } });
-  if (!member || member.role !== "owner") return NextResponse.json({ error: "Apenas dono da familia pode gerar convite" }, { status: 403 });
+  if (!member || member.role !== "owner") return NextResponse.json({ error: apiT(req, "api.onlyOwnerInvite") }, { status: 403 });
 
   const inviteRepo = db.getRepository(FamilyInvite);
   const activeInvite = await inviteRepo.findOne({ where: { familyId, usedAt: IsNull(), expiresAt: MoreThan(new Date()) }, order: { createdAt: "DESC" } });

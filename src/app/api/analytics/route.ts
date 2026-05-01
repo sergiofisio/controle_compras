@@ -6,20 +6,21 @@ import { FamilyMember } from "@/server/db/entities/FamilyMember";
 import { Purchase } from "@/server/db/entities/Purchase";
 import { PurchaseItem } from "@/server/db/entities/PurchaseItem";
 import { PriceHistory } from "@/server/db/entities/PriceHistory";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
 export async function GET(req: import("next/server").NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: apiT(req, "api.unauthorized") }, { status: 401 });
 
   const familyId = req.nextUrl.searchParams.get("familyId");
   const productName = req.nextUrl.searchParams.get("productName");
-  if (!familyId) return NextResponse.json({ error: "familyId obrigatorio" }, { status: 400 });
+  if (!familyId) return NextResponse.json({ error: apiT(req, "api.familyIdRequired") }, { status: 400 });
 
   const db = await ensureDb();
   const member = await db.getRepository(FamilyMember).findOne({ where: { familyId, userId: session.userId } });
-  if (!member) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  if (!member) return NextResponse.json({ error: apiT(req, "api.accessDenied") }, { status: 403 });
 
   const purchases = await db.getRepository(Purchase).find({ where: { familyId } });
   const items = purchases.length ? await db.getRepository(PurchaseItem).find({ where: { purchaseId: In(purchases.map((p) => p.id)) } }) : [];

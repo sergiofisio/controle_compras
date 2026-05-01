@@ -5,14 +5,15 @@ import { IsNull, MoreThan } from "typeorm";
 import { ensureDb } from "@/server/db/data-source";
 import { PasswordResetToken } from "@/server/db/entities/PasswordResetToken";
 import { User } from "@/server/db/entities/User";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request) {
+export async function POST(req: import("next/server").NextRequest) {
   const { token, newPassword } = await req.json();
 
   if (!token || !newPassword || String(newPassword).length < 6) {
-    return NextResponse.json({ error: "Token e nova senha valida sao obrigatorios" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.tokenPasswordRequired") }, { status: 400 });
   }
 
   const tokenHash = createHash("sha256").update(token).digest("hex");
@@ -26,12 +27,12 @@ export async function POST(req: Request) {
   });
 
   if (!savedToken) {
-    return NextResponse.json({ error: "Token invalido ou expirado" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.tokenInvalidExpired") }, { status: 400 });
   }
 
   const user = await userRepo.findOne({ where: { id: savedToken.userId } });
   if (!user) {
-    return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+    return NextResponse.json({ error: apiT(req, "api.userNotFound") }, { status: 404 });
   }
 
   user.passwordHash = await bcrypt.hash(newPassword, 10);
@@ -40,5 +41,5 @@ export async function POST(req: Request) {
   savedToken.usedAt = new Date();
   await tokenRepo.save(savedToken);
 
-  return NextResponse.json({ message: "Senha atualizada com sucesso" });
+  return NextResponse.json({ message: apiT(req, "api.passwordUpdatedSuccess") });
 }

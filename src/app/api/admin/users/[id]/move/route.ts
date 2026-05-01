@@ -3,6 +3,7 @@ import { ensureDb } from "@/server/db/data-source";
 import { requireAdmin } from "@/server/auth/admin";
 import { FamilyMember } from "@/server/db/entities/FamilyMember";
 import { logAccess } from "@/server/logging/audit";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,7 @@ export async function PUT(req: import("next/server").NextRequest, ctx: { params:
   const { id } = await ctx.params;
   const { targetFamilyId, sourceFamilyId } = await req.json();
   if (!targetFamilyId) {
-    return NextResponse.json({ error: "Familia de destino obrigatoria" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.moveFamilyRequired") }, { status: 400 });
   }
 
   const db = await ensureDb();

@@ -33,8 +33,8 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({ error: "Erro ao entrar" }));
-        const msg = body.error || "Erro ao entrar";
+        const body = await res.json().catch(() => ({ error: t("login.error.generic") }));
+        const msg = body.error || t("login.error.generic");
         setError(msg);
         toast.error(msg);
         return;

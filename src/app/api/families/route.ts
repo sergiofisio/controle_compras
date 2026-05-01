@@ -4,12 +4,13 @@ import { ensureDb } from "@/server/db/data-source";
 import { FamilyMember } from "@/server/db/entities/FamilyMember";
 import { Family } from "@/server/db/entities/Family";
 import { getSessionFromRequest } from "@/server/auth/session";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
 export async function GET(req: import("next/server").NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: apiT(req, "api.unauthorized") }, { status: 401 });
 
   const db = await ensureDb();
   const memberships = await db.getRepository(FamilyMember).find({ where: { userId: session.userId } });

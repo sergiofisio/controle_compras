@@ -11,6 +11,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { AppInput } from "@/components/ui/AppInput";
 import { AppSelect } from "@/components/ui/AppSelect";
 import { AppField } from "@/components/ui/AppField";
+import { useI18n } from "@/i18n";
 
 type Category = { id: string; name: string; isGlobal?: boolean };
 type BrandItem = { id: string; name: string; categoryId: string | null; isGlobal?: boolean };
@@ -37,6 +38,7 @@ type CartItem = {
 };
 
 export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved: () => void }) {
+  const { t } = useI18n();
   const { stores, setStores } = useStores(familyId);
   const [selectedStoreName, setSelectedStoreName] = useState("");
   const [newStoreName, setNewStoreName] = useState("");
@@ -151,14 +153,14 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
   async function deleteCategory(category: Category) {
     if (!familyId || category.isGlobal) return;
     const res = await fetch(`/api/categories/${category.id}?familyId=${familyId}`, { method: "DELETE" });
-    const body = await res.json().catch(() => ({ error: "Falha ao excluir secao" }));
+    const body = await res.json().catch(() => ({ error: t("purchase.error.deleteSectionFailed") }));
     if (!res.ok) {
-      toast.error(body.error || "Falha ao excluir secao");
+      toast.error(body.error || t("purchase.error.deleteSectionFailed"));
       return;
     }
     setCategories((prev) => prev.filter((c) => c.id !== category.id));
     if (categoryId === category.id) setCategoryId("");
-    toast.success("Secao excluida com sucesso");
+    toast.success(t("purchase.success.sectionDeleted"));
   }
 
   async function createBrand() {
@@ -179,14 +181,14 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
   async function deleteBrand(brand: BrandItem) {
     if (!familyId || brand.isGlobal) return;
     const res = await fetch(`/api/brands/${brand.id}?familyId=${familyId}`, { method: "DELETE" });
-    const body = await res.json().catch(() => ({ error: "Falha ao excluir marca" }));
+    const body = await res.json().catch(() => ({ error: t("purchase.error.deleteBrandFailed") }));
     if (!res.ok) {
-      toast.error(body.error || "Falha ao excluir marca");
+      toast.error(body.error || t("purchase.error.deleteBrandFailed"));
       return;
     }
     setBrands((prev) => prev.filter((b) => b.id !== brand.id));
     if (brandId === brand.id) setBrandId("");
-    toast.success("Marca excluida com sucesso");
+    toast.success(t("purchase.success.brandDeleted"));
   }
 
   async function togglePickedItem(itemId: string, checked: boolean) {
@@ -197,9 +199,9 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId, checked }),
       });
-      const body = await res.json().catch(() => ({ error: "Falha ao atualizar item" }));
+      const body = await res.json().catch(() => ({ error: t("purchase.error.updateItemFailed") }));
       if (!res.ok) {
-        toast.error(body.error || "Falha ao atualizar item");
+        toast.error(body.error || t("purchase.error.updateItemFailed"));
         return;
       }
 
@@ -292,9 +294,9 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
   return (
     <form className="space-y-4" onSubmit={submitPurchase}>
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-2">
-        <AppField label="Loja da compra">
+        <AppField label={t("purchase.storeLabel")}>
           <AppSelect value={activeStoreName} onChange={(e) => setSelectedStoreName(e.target.value)}>
-            <option value="">Selecione</option>
+            <option value="">{t("common.select")}</option>
             {stores.map((store) => (
               <option key={store.id} value={store.name}>
                 {store.name} ({store.type})
@@ -304,8 +306,8 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
         </AppField>
 
         <div className="grid gap-2 md:grid-cols-[1fr_auto]">
-          <AppField label="Nova loja">
-            <AppInput placeholder="Ex: Mercado Central" value={newStoreName} onChange={(e) => setNewStoreName(e.target.value)} />
+          <AppField label={t("purchase.newStoreLabel")}>
+            <AppInput placeholder={t("purchase.newStorePlaceholder")} value={newStoreName} onChange={(e) => setNewStoreName(e.target.value)} />
           </AppField>
           <div className="flex items-end gap-2">
             <AppSelect className="w-auto" value={newStoreType} onChange={(e) => setNewStoreType(e.target.value)}>
@@ -316,7 +318,7 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
               ))}
             </AppSelect>
             <AppButton type="button" variant="secondary" onClick={createStore}>
-              Salvar
+              {t("common.save")}
             </AppButton>
           </div>
         </div>
@@ -325,7 +327,7 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-8">
         <AppInput
           className="md:col-span-2"
-          placeholder="Produto"
+          placeholder={t("purchase.productPlaceholder")}
           list="purchase-product-suggestions"
           value={productName}
           onChange={(e) => {
@@ -347,27 +349,27 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
         <div className="md:col-span-2">
           <div className="flex gap-2">
             <AppSelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-              <option value="">Secao</option>
+              <option value="">{t("dashboard.section")}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </AppSelect>
-            <AppButton type="button" variant="ghost" className="px-2 text-xs" onClick={() => setShowCategoryModal(true)}>+ Secao</AppButton>
+            <AppButton type="button" variant="ghost" className="px-2 text-xs" onClick={() => setShowCategoryModal(true)}>{t("purchase.addSection")}</AppButton>
           </div>
         </div>
         <div className="md:col-span-2">
           <div className="flex gap-2">
             <AppSelect value={brandId} onChange={(e) => setBrandId(e.target.value)}>
-              <option value="">Marca</option>
+              <option value="">{t("dashboard.brand")}</option>
               {brands.map((brand) => (
                 <option key={brand.id} value={brand.id}>
                   {brand.name}
                 </option>
               ))}
             </AppSelect>
-            <AppButton type="button" variant="ghost" className="px-2 text-xs" onClick={() => setShowBrandModal(true)}>+ Marca</AppButton>
+            <AppButton type="button" variant="ghost" className="px-2 text-xs" onClick={() => setShowBrandModal(true)}>{t("purchase.addBrand")}</AppButton>
           </div>
         </div>
         <AppInput type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value) || 1)} />
@@ -380,7 +382,7 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
         </AppSelect>
         <AppInput
           inputMode="numeric"
-          placeholder="Valor unitario"
+          placeholder={t("purchase.unitPricePlaceholder")}
           value={unitPriceInput}
           onChange={(e) => {
             const parsed = parseCurrencyInput(e.target.value);
@@ -389,19 +391,19 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
           }}
         />
         <AppSelect value={discountType} onChange={(e) => setDiscountType(e.target.value as DiscountType)}>
-          <option value="none">Sem promocao</option>
-          <option value="percent">Desconto %</option>
-          <option value="bulk">Leve X pague Y</option>
+          <option value="none">{t("purchase.discount.none")}</option>
+          <option value="percent">{t("purchase.discount.percent")}</option>
+          <option value="bulk">{t("purchase.discount.bulk")}</option>
         </AppSelect>
         <AppButton type="button" variant="success" onClick={addToCart}>
-          Adicionar
+          {t("purchase.addToCart")}
         </AppButton>
 
         {discountType === "percent" && (
           <AppInput
             className="md:col-span-2"
             inputMode="decimal"
-            placeholder="Ex: 15 para 15%"
+            placeholder={t("purchase.percentPlaceholder")}
             value={discountPercentInput}
             onChange={(e) => {
               const raw = e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "");
@@ -413,10 +415,10 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
 
         {discountType === "bulk" && (
           <>
-            <AppInput type="number" min={1} placeholder="Qtd promo" value={promoQty} onChange={(e) => setPromoQty(Number(e.target.value) || 1)} />
+            <AppInput type="number" min={1} placeholder={t("purchase.promoQtyPlaceholder")} value={promoQty} onChange={(e) => setPromoQty(Number(e.target.value) || 1)} />
             <AppInput
               inputMode="numeric"
-              placeholder="Valor do pacote"
+              placeholder={t("purchase.promoPackPlaceholder")}
               value={promoPriceInput}
               onChange={(e) => {
                 const parsed = parseCurrencyInput(e.target.value);
@@ -429,9 +431,9 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-3">
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">Carrinho da loja</h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700">{t("purchase.cartTitle")}</h3>
         {cart.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhum item adicionado ainda.</p>
+          <p className="text-sm text-slate-500">{t("purchase.cartEmpty")}</p>
         ) : (
           <div className="space-y-2">
             {cart.map((item) => (
@@ -442,14 +444,14 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
                     {item.quantity} {item.unit} x {formatCurrency(item.unitPrice)}
                     {item.categoryName && ` | ${item.categoryName}`}
                     {item.brandName && ` | ${item.brandName}`}
-                    {item.discountType === "percent" && ` | desconto ${item.discountPercent}%`}
-                    {item.discountType === "bulk" && ` | leve ${item.promoQty} pague ${formatCurrency(item.promoPrice)}`}
+                    {item.discountType === "percent" && ` ${t("purchase.lineDiscount").replace("{pct}", String(item.discountPercent))}`}
+                    {item.discountType === "bulk" && ` ${t("purchase.lineBulk").replace("{qty}", String(item.promoQty)).replace("{price}", formatCurrency(item.promoPrice))}`}
                   </p>
                 </div>
-                <span className="text-slate-600">{formatCurrency(item.finalUnitPrice)}/un</span>
+                <span className="text-slate-600">{formatCurrency(item.finalUnitPrice)}{t("purchase.perUnit")}</span>
                 <span className="font-semibold text-slate-800">{formatCurrency(item.lineTotal)}</span>
                 <AppButton type="button" variant="ghost" className="rounded-lg px-2 py-1 text-xs" onClick={() => removeItem(item.id)}>
-                  Remover
+                  {t("common.remove")}
                 </AppButton>
               </div>
             ))}
@@ -457,16 +459,16 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
         )}
 
         <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
-          <p className="text-sm text-slate-600">Total da compra nesta loja</p>
+          <p className="text-sm text-slate-600">{t("purchase.cartTotalLabel")}</p>
           <p className="text-xl font-bold text-slate-900">{formatCurrency(cartTotal)}</p>
         </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-3">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-slate-700">Lista de compras em uso</h3>
+          <h3 className="text-sm font-semibold text-slate-700">{t("purchase.listSectionTitle")}</h3>
           <AppSelect className="max-w-xs" value={activeListId || activeList?.id || ""} onChange={(e) => setActiveListId(e.target.value)}>
-            {shoppingLists.length === 0 ? <option value="">Sem listas</option> : null}
+            {shoppingLists.length === 0 ? <option value="">{t("dashboard.noLists")}</option> : null}
             {shoppingLists.map((list) => (
               <option key={list.id} value={list.id}>
                 {list.name}
@@ -476,9 +478,9 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
         </div>
 
         {!activeList ? (
-          <p className="text-sm text-slate-500">Crie uma lista na aba de listas para acompanhar os itens aqui durante a compra.</p>
+          <p className="text-sm text-slate-500">{t("purchase.noListsHint")}</p>
         ) : activeList.items.length === 0 ? (
-          <p className="text-sm text-slate-500">Essa lista ainda nao possui itens.</p>
+          <p className="text-sm text-slate-500">{t("purchase.listEmpty")}</p>
         ) : (
           <ul className="space-y-2">
             {activeList.items.map((item) => (
@@ -486,10 +488,10 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
                 <label className="flex cursor-pointer items-center gap-2">
                   <input type="checkbox" checked={item.checked} onChange={(e) => void togglePickedItem(item.id, e.target.checked)} />
                   <span className={item.checked ? "line-through text-slate-500" : "text-slate-800"}>
-                    {item.name} - {item.quantity} {item.unit ?? "unidade"}
+                    {item.name} - {item.quantity} {item.unit ?? t("purchase.unitFallback")}
                   </span>
                 </label>
-                {checkingItemId === item.id ? <span className="text-xs text-blue-700">Salvando...</span> : null}
+                {checkingItemId === item.id ? <span className="text-xs text-blue-700">{t("purchase.savingCheckbox")}</span> : null}
               </li>
             ))}
           </ul>
@@ -497,12 +499,12 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
       </div>
 
       <AppButton type="submit" disabled={!activeStoreName || cart.length === 0} className="w-full">
-        Finalizar compra
+        {t("purchase.finalize")}
       </AppButton>
 
       {showCategoryModal && (
-        <SimpleModal title="Nova secao" onClose={() => setShowCategoryModal(false)}>
-          <AppInput placeholder="Nome da secao" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
+        <SimpleModal title={t("dashboard.modal.newSection")} onClose={() => setShowCategoryModal(false)}>
+          <AppInput placeholder={t("dashboard.modal.sectionName")} value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
           <div className="mt-3 space-y-2">
             {categories
               .filter((c) => !c.isGlobal)
@@ -510,24 +512,24 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
                 <div key={category.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-2 text-sm">
                   <span>{category.name}</span>
                   <AppButton type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => deleteCategory(category)}>
-                    Excluir
+                    {t("dashboard.exclude")}
                   </AppButton>
                 </div>
               ))}
           </div>
           <div className="mt-3 flex justify-end gap-2">
             <AppButton type="button" onClick={createCategory}>
-              Salvar
+              {t("common.save")}
             </AppButton>
           </div>
         </SimpleModal>
       )}
 
       {showBrandModal && (
-        <SimpleModal title="Nova marca" onClose={() => setShowBrandModal(false)}>
-          <AppInput placeholder="Nome da marca" value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} />
+        <SimpleModal title={t("dashboard.modal.newBrand")} onClose={() => setShowBrandModal(false)}>
+          <AppInput placeholder={t("dashboard.modal.brandName")} value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} />
           <AppSelect className="mt-2" value={newBrandCategoryId} onChange={(e) => setNewBrandCategoryId(e.target.value)}>
-            <option value="">Sem secao especifica</option>
+            <option value="">{t("dashboard.modal.noSpecificSection")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -541,14 +543,14 @@ export function PurchaseForm({ familyId, onSaved }: { familyId: string; onSaved:
                 <div key={brand.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-2 text-sm">
                   <span>{brand.name}</span>
                   <AppButton type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => deleteBrand(brand)}>
-                    Excluir
+                    {t("dashboard.exclude")}
                   </AppButton>
                 </div>
               ))}
           </div>
           <div className="mt-3 flex justify-end gap-2">
             <AppButton type="button" onClick={createBrand}>
-              Salvar
+              {t("common.save")}
             </AppButton>
           </div>
         </SimpleModal>

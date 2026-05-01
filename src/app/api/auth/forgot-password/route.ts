@@ -4,13 +4,14 @@ import { MoreThan, IsNull } from "typeorm";
 import { ensureDb } from "@/server/db/data-source";
 import { User } from "@/server/db/entities/User";
 import { PasswordResetToken } from "@/server/db/entities/PasswordResetToken";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request) {
+export async function POST(req: import("next/server").NextRequest) {
   const { email } = await req.json();
   if (!email) {
-    return NextResponse.json({ error: "E-mail obrigatorio" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.emailRequired") }, { status: 400 });
   }
 
   const db = await ensureDb();
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
 
   // Nao revela se o e-mail existe
   if (!user) {
-    return NextResponse.json({ message: "Se o e-mail existir, enviaremos instrucoes de recuperacao." });
+    return NextResponse.json({ message: apiT(req, "api.forgotPasswordMessage") });
   }
 
   // Invalida token ativo anterior
@@ -42,11 +43,11 @@ export async function POST(req: Request) {
 
   if (process.env.NODE_ENV !== "production") {
     return NextResponse.json({
-      message: "Token gerado para ambiente local.",
+      message: apiT(req, "api.tokenGeneratedLocal"),
       resetLink,
       expiresAt: expiresAt.toISOString(),
     });
   }
 
-  return NextResponse.json({ message: "Se o e-mail existir, enviaremos instrucoes de recuperacao." });
+  return NextResponse.json({ message: apiT(req, "api.forgotPasswordMessage") });
 }

@@ -132,7 +132,7 @@ export default function DashboardPage() {
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
     if (!familyId || !itemName || !effectiveSelectedListId) {
-      toast.error("Crie ou selecione uma lista antes de adicionar itens");
+      toast.error(t("dashboard.error.selectListFirst"));
       return;
     }
     setAddingItem(true);
@@ -160,7 +160,7 @@ export default function DashboardPage() {
           list.id === data.listId ? { ...list, items: [...(list.items || []), data.item] } : list,
         ),
       );
-      toast.success("Item adicionado na lista");
+      toast.success(t("dashboard.success.itemAdded"));
     } finally {
       setAddingItem(false);
     }
@@ -175,7 +175,7 @@ export default function DashboardPage() {
         listName: newListName.trim(),
       });
       if (!ok) {
-        toast.error("Falha ao criar lista");
+        toast.error(t("dashboard.error.createListFailed"));
         return;
       }
 
@@ -186,7 +186,7 @@ export default function DashboardPage() {
       });
       setSelectedListId(data.listId);
       setNewListName("");
-      toast.success("Lista criada com sucesso");
+      toast.success(t("dashboard.success.listCreated"));
     } finally {
       setCreatingList(false);
     }
@@ -221,18 +221,18 @@ export default function DashboardPage() {
     if (!familyId) return;
     const target = categories.find((c) => c.id === categoryIdToDelete);
     if (!target || target.isGlobal) {
-      toast.error("Nao e permitido remover secoes globais");
+      toast.error(t("dashboard.error.deleteGlobalSection"));
       return;
     }
     const res = await fetch(`/api/categories/${categoryIdToDelete}?familyId=${familyId}`, { method: "DELETE" });
-    const body = await res.json().catch(() => ({ error: "Falha ao excluir secao" }));
+    const body = await res.json().catch(() => ({ error: t("dashboard.error.deleteSectionFailed") }));
     if (!res.ok) {
-      toast.error(body.error || "Falha ao excluir secao");
+      toast.error(body.error || t("dashboard.error.deleteSectionFailed"));
       return;
     }
     setCategories((prev) => prev.filter((c) => c.id !== categoryIdToDelete));
     if (categoryId === categoryIdToDelete) setCategoryId("");
-    toast.success("Secao excluida com sucesso");
+    toast.success(t("dashboard.success.sectionDeleted"));
   }
 
   async function createBrand() {
@@ -254,18 +254,18 @@ export default function DashboardPage() {
     if (!familyId) return;
     const target = brands.find((b) => b.id === brandIdToDelete);
     if (!target || target.isGlobal) {
-      toast.error("Nao e permitido remover marcas globais");
+      toast.error(t("dashboard.error.deleteGlobalBrand"));
       return;
     }
     const res = await fetch(`/api/brands/${brandIdToDelete}?familyId=${familyId}`, { method: "DELETE" });
-    const body = await res.json().catch(() => ({ error: "Falha ao excluir marca" }));
+    const body = await res.json().catch(() => ({ error: t("dashboard.error.deleteBrandFailed") }));
     if (!res.ok) {
-      toast.error(body.error || "Falha ao excluir marca");
+      toast.error(body.error || t("dashboard.error.deleteBrandFailed"));
       return;
     }
     setBrands((prev) => prev.filter((b) => b.id !== brandIdToDelete));
     if (brandId === brandIdToDelete) setBrandId("");
-    toast.success("Marca excluida com sucesso");
+    toast.success(t("dashboard.success.brandDeleted"));
   }
 
   async function generateInvite() {
@@ -275,14 +275,14 @@ export default function DashboardPage() {
     try {
       const { ok, data } = await sendJson<{ invite: { inviteCode: string }; error?: string }>("/api/families/invites", "POST", { familyId });
       if (!ok) {
-        const msg = (data as { error?: string }).error || "Falha ao gerar convite";
+        const msg = (data as { error?: string }).error || t("dashboard.error.inviteFailed");
         setFamilyMessage(msg);
         toast.error(msg);
         return;
       }
       setInviteCode(data.invite.inviteCode);
-      setFamilyMessage("Codigo de convite gerado.");
-      toast.success("Codigo de convite gerado");
+      setFamilyMessage(t("dashboard.message.inviteGenerated"));
+      toast.success(t("dashboard.success.inviteGenerated"));
     } finally {
       setGeneratingInvite(false);
     }
@@ -295,14 +295,14 @@ export default function DashboardPage() {
     try {
       const { ok, data } = await sendJson<{ familyId?: string; error?: string }>("/api/families/join", "POST", { inviteCode: joinCode.trim().toUpperCase() });
       if (!ok) {
-        const msg = data.error || "Falha ao entrar na familia";
+        const msg = data.error || t("dashboard.error.joinFailed");
         setFamilyMessage(msg);
         toast.error(msg);
         return;
       }
 
-      setFamilyMessage("Voce entrou na familia com sucesso.");
-      toast.success("Voce entrou na familia com sucesso");
+      setFamilyMessage(t("dashboard.message.joinSuccess"));
+      toast.success(t("dashboard.success.joinSuccess"));
       setJoinCode("");
 
       getJson<{ families: typeof families }>("/api/families").then((resp) => {
@@ -318,7 +318,7 @@ export default function DashboardPage() {
     setLoggingOut(true);
     try {
       await sendJson<{ ok: boolean }>("/api/auth/logout", "POST");
-      toast.success("Logout realizado");
+      toast.success(t("dashboard.success.logout"));
       router.push("/login");
     } finally {
       setLoggingOut(false);
@@ -333,13 +333,13 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ listId }),
       });
-      const body = await res.json().catch(() => ({ error: "Falha ao apagar lista" }));
+      const body = await res.json().catch(() => ({ error: t("dashboard.error.deleteListFailed") }));
       if (!res.ok) {
-        toast.error(body.error || "Falha ao apagar lista");
+        toast.error(body.error || t("dashboard.error.deleteListFailed"));
         return;
       }
       setLists((current) => current.filter((list) => list.id !== listId));
-      toast.success("Lista apagada com sucesso");
+      toast.success(t("dashboard.success.listDeleted"));
     } finally {
       setDeletingListId(null);
     }
@@ -353,9 +353,9 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId }),
       });
-      const body = await res.json().catch(() => ({ error: "Falha ao apagar item" }));
+      const body = await res.json().catch(() => ({ error: t("dashboard.error.deleteItemFailed") }));
       if (!res.ok) {
-        toast.error(body.error || "Falha ao apagar item");
+        toast.error(body.error || t("dashboard.error.deleteItemFailed"));
         return;
       }
 
@@ -366,7 +366,7 @@ export default function DashboardPage() {
             : list,
         ),
       );
-      toast.success("Item removido da lista");
+      toast.success(t("dashboard.success.itemRemoved"));
     } finally {
       setDeletingItemId(null);
     }
@@ -379,8 +379,8 @@ export default function DashboardPage() {
   };
   const currentMeta = tabMeta[activeTab];
   useEffect(() => {
-    document.title = `${currentMeta.title} | Controle Compras`;
-  }, [currentMeta.title]);
+    document.title = `${currentMeta.title} | ${t("dashboard.docTitleSuffix")}`;
+  }, [currentMeta.title, t]);
 
   return (
     <main className="min-h-screen bg-linear-to-b from-slate-50 to-blue-50 p-4 md:p-6">
@@ -395,15 +395,15 @@ export default function DashboardPage() {
               <>
                 <section className="grid gap-4 md:grid-cols-3">
                   <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
-                    <p className="text-sm text-slate-500">Total gasto</p>
+                    <p className="text-sm text-slate-500">{t("dashboard.totalSpent")}</p>
                     <p className="text-2xl font-bold text-slate-900">R$ {analytics?.totalSpent?.toFixed?.(2) ?? "0,00"}</p>
                   </motion.div>
                   <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
-                    <p className="text-sm text-slate-500">Compras</p>
+                    <p className="text-sm text-slate-500">{t("dashboard.purchases")}</p>
                     <p className="text-2xl font-bold text-slate-900">{analytics?.purchasesCount ?? 0}</p>
                   </motion.div>
                   <motion.div whileHover={{ y: -4 }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow">
-                    <p className="text-sm text-slate-500">Itens na lista</p>
+                    <p className="text-sm text-slate-500">{t("dashboard.itemsInList")}</p>
                     <p className="text-2xl font-bold text-slate-900">{totalItems}</p>
                   </motion.div>
                 </section>
@@ -413,18 +413,18 @@ export default function DashboardPage() {
                 </div>
 
                 <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <h2 className="text-lg font-semibold text-slate-900">Compartilhar familia</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">{t("dashboard.shareFamily")}</h2>
                   <div className="mt-3 space-y-3">
                     <div className="flex gap-2">
                       <AppButton type="button" onClick={generateInvite} loading={generatingInvite}>
-                        Gerar codigo
+                        {t("dashboard.generateCode")}
                       </AppButton>
                       {inviteCode && <span className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{inviteCode}</span>}
                     </div>
                     <div className="flex gap-2">
-                      <AppInput placeholder="Digite codigo para entrar em outra familia" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
+                      <AppInput placeholder={t("dashboard.enterCodePlaceholder")} value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
                       <AppButton type="button" variant="secondary" onClick={joinFamily} loading={joiningFamily}>
-                        Entrar
+                        {t("dashboard.enter")}
                       </AppButton>
                     </div>
                     {familyMessage && <p className="text-sm text-slate-600">{familyMessage}</p>}
@@ -436,10 +436,10 @@ export default function DashboardPage() {
             {activeTab === "lists" && (
               <>
                 <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <h2 className="mb-3 text-lg font-semibold text-slate-900">Adicionar item na lista compartilhada</h2>
+                  <h2 className="mb-3 text-lg font-semibold text-slate-900">{t("dashboard.addItemTitle")}</h2>
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <AppSelect className="max-w-sm" value={effectiveSelectedListId} onChange={(e) => setSelectedListId(e.target.value)}>
-                      {lists.length === 0 ? <option value="">Sem listas</option> : null}
+                      {lists.length === 0 ? <option value="">{t("dashboard.noLists")}</option> : null}
                       {lists.map((list) => (
                         <option key={list.id} value={list.id}>
                           {list.name}
@@ -447,12 +447,12 @@ export default function DashboardPage() {
                       ))}
                     </AppSelect>
                     <AppButton type="button" variant="secondary" onClick={() => setShowListManagerModal(true)}>
-                      Gerenciar listas
+                      {t("dashboard.manageLists")}
                     </AppButton>
                   </div>
                   <form className="grid gap-2 md:grid-cols-6" onSubmit={addItem}>
                     <AppInput
-                      placeholder="Produto"
+                      placeholder={t("dashboard.productPlaceholder")}
                       list="dashboard-item-suggestions"
                       value={itemName}
                       onChange={(e) => {
@@ -473,7 +473,7 @@ export default function DashboardPage() {
                     </datalist>
                     <div className="flex gap-2">
                       <AppSelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                        <option value="">Secao</option>
+                        <option value="">{t("dashboard.section")}</option>
                         {categories.map((category) => (
                           <option key={category.id} value={category.id}>
                             {category.name}
@@ -486,7 +486,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex gap-2">
                       <AppSelect value={brandId} onChange={(e) => setBrandId(e.target.value)}>
-                        <option value="">Marca</option>
+                        <option value="">{t("dashboard.brand")}</option>
                         {brands.map((brand) => (
                           <option key={brand.id} value={brand.id}>
                             {brand.name}
@@ -505,11 +505,11 @@ export default function DashboardPage() {
                         </option>
                       ))}
                     </AppSelect>
-                    <AppButton type="submit" loading={addingItem} loadingText="Adicionando...">Adicionar</AppButton>
+                    <AppButton type="submit" loading={addingItem} loadingText={t("dashboard.adding")}>{t("dashboard.add")}</AppButton>
                   </form>
 
                   <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3">
-                    <label className="text-sm font-medium text-slate-600">Foto do produto (OCR local)</label>
+                    <label className="text-sm font-medium text-slate-600">{t("dashboard.ocrLabel")}</label>
                     <input
                       className="mt-2 block w-full text-sm"
                       type="file"
@@ -521,7 +521,7 @@ export default function DashboardPage() {
                     />
                     {ocrSuggestion && (
                       <p className="mt-2 text-sm text-slate-600">
-                        Sugestao OCR: {ocrSuggestion.productName} - {ocrSuggestion.price ? `R$ ${ocrSuggestion.price.toFixed(2)}` : "preco nao detectado"}
+                        {t("dashboard.ocrSuggestion")} {ocrSuggestion.productName} - {ocrSuggestion.price ? `R$ ${ocrSuggestion.price.toFixed(2)}` : t("dashboard.priceNotDetected")}
                       </p>
                     )}
                   </div>
@@ -530,11 +530,11 @@ export default function DashboardPage() {
                 {showListManagerModal && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
                     <div className="w-full max-w-3xl rounded-2xl bg-white p-4 shadow-lg">
-                      <h4 className="text-lg font-semibold text-slate-900">Gerenciar listas</h4>
+                      <h4 className="text-lg font-semibold text-slate-900">{t("dashboard.manageListsTitle")}</h4>
                       <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto]">
-                        <AppInput placeholder="Nome da nova lista" value={newListName} onChange={(e) => setNewListName(e.target.value)} />
-                        <AppButton type="button" onClick={createList} loading={creatingList} loadingText="Criando...">
-                          Criar lista
+                        <AppInput placeholder={t("dashboard.newListPlaceholder")} value={newListName} onChange={(e) => setNewListName(e.target.value)} />
+                        <AppButton type="button" onClick={createList} loading={creatingList} loadingText={t("dashboard.creating")}>
+                          {t("dashboard.createList")}
                         </AppButton>
                       </div>
 
@@ -545,15 +545,15 @@ export default function DashboardPage() {
                               <p className="font-semibold text-slate-900">{list.name}</p>
                               <div className="flex items-center gap-2">
                                 <AppButton type="button" variant="ghost" className="px-2 py-1 text-xs" onClick={() => setSelectedListId(list.id)}>
-                                  Usar
+                                  {t("dashboard.use")}
                                 </AppButton>
-                                <AppButton type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => deleteList(list.id)} loading={deletingListId === list.id} loadingText="Apagando...">
-                                  Apagar
+                                <AppButton type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => deleteList(list.id)} loading={deletingListId === list.id} loadingText={t("dashboard.deleting")}>
+                                  {t("dashboard.delete")}
                                 </AppButton>
                               </div>
                             </div>
                             <div className="mt-2 rounded-lg border border-slate-100 bg-slate-50 p-2 text-xs text-slate-600">
-                              {list.items.length} item(ns)
+                              {list.items.length} {t("dashboard.itemsCount")}
                             </div>
                           </div>
                         ))}
@@ -561,7 +561,7 @@ export default function DashboardPage() {
 
                       <div className="mt-4 flex justify-end">
                         <AppButton type="button" variant="ghost" onClick={() => setShowListManagerModal(false)}>
-                          Fechar
+                          {t("dashboard.close")}
                         </AppButton>
                       </div>
                     </div>
@@ -579,15 +579,15 @@ export default function DashboardPage() {
                           className="px-2 py-1 text-xs"
                           onClick={() => deleteList(list.id)}
                           loading={deletingListId === list.id}
-                          loadingText="Apagando..."
+                          loadingText={t("dashboard.deleting")}
                         >
-                          Apagar lista
+                          {t("dashboard.deleteList")}
                         </AppButton>
                       </div>
                       <div className="mt-3 space-y-3">
                         {Object.entries(
                           list.items.reduce<Record<string, ListItem[]>>((acc, item) => {
-                            const categoryName = categories.find((c) => c.id === item.categoryId)?.name || "Sem secao";
+                            const categoryName = categories.find((c) => c.id === item.categoryId)?.name || t("dashboard.noSection");
                             acc[categoryName] = [...(acc[categoryName] || []), item];
                             return acc;
                           }, {}),
@@ -596,14 +596,14 @@ export default function DashboardPage() {
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{sectionName}</p>
                             <ul className="mt-2 space-y-2 text-sm">
                               {sectionItems.map((item, itemIndex) => {
-                                const brandName = allBrands.find((b) => b.id === item.brandId)?.name || "Sem marca";
+                                const brandName = allBrands.find((b) => b.id === item.brandId)?.name || t("dashboard.noBrand");
                                 return (
                                   <li key={`${list.id}-${sectionName}-${item.id}-${itemIndex}`} className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-700">
                                     <div className="flex items-center justify-between gap-2">
                                       <p className="font-medium text-slate-900">{item.name}</p>
                                       <div className="flex items-center gap-2">
                                         <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                                          {item.quantity} {item.unit ?? "unidade"}
+                                          {item.quantity} {item.unit ?? t("purchase.unitFallback")}
                                         </span>
                                         <AppButton
                                           type="button"
@@ -613,11 +613,11 @@ export default function DashboardPage() {
                                           loading={deletingItemId === item.id}
                                           loadingText="..."
                                         >
-                                          Remover
+                                          {t("common.remove")}
                                         </AppButton>
                                       </div>
                                     </div>
-                                    <p className="mt-1 text-xs text-slate-500">Marca: {brandName}</p>
+                                    <p className="mt-1 text-xs text-slate-500">{t("dashboard.brandLabel")} {brandName}</p>
                                   </li>
                                 );
                               })}
@@ -630,8 +630,8 @@ export default function DashboardPage() {
                 </section>
 
                 {showCategoryModal && (
-                  <SimpleModal title="Nova secao" onClose={() => setShowCategoryModal(false)}>
-                    <AppInput placeholder="Nome da secao" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
+                  <SimpleModal title={t("dashboard.modal.newSection")} onClose={() => setShowCategoryModal(false)}>
+                    <AppInput placeholder={t("dashboard.modal.sectionName")} value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
                     <div className="mt-3 space-y-2">
                       {categories
                         .filter((c) => !c.isGlobal)
@@ -639,24 +639,24 @@ export default function DashboardPage() {
                           <div key={category.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-2 text-sm">
                             <span>{category.name}</span>
                             <AppButton type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => deleteCategory(category.id)}>
-                              Excluir
+                              {t("dashboard.exclude")}
                             </AppButton>
                           </div>
                         ))}
                     </div>
                     <div className="mt-3 flex justify-end gap-2">
                       <AppButton type="button" onClick={createCategory}>
-                        Salvar
+                        {t("common.save")}
                       </AppButton>
                     </div>
                   </SimpleModal>
                 )}
 
                 {showBrandModal && (
-                  <SimpleModal title="Nova marca" onClose={() => setShowBrandModal(false)}>
-                    <AppInput placeholder="Nome da marca" value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} />
+                  <SimpleModal title={t("dashboard.modal.newBrand")} onClose={() => setShowBrandModal(false)}>
+                    <AppInput placeholder={t("dashboard.modal.brandName")} value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} />
                     <AppSelect className="mt-2" value={newBrandCategoryId} onChange={(e) => setNewBrandCategoryId(e.target.value)}>
-                      <option value="">Sem secao especifica</option>
+                      <option value="">{t("dashboard.modal.noSpecificSection")}</option>
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -670,14 +670,14 @@ export default function DashboardPage() {
                           <div key={brand.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-2 text-sm">
                             <span>{brand.name}</span>
                             <AppButton type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => deleteBrand(brand.id)}>
-                              Excluir
+                              {t("dashboard.exclude")}
                             </AppButton>
                           </div>
                         ))}
                     </div>
                     <div className="mt-3 flex justify-end gap-2">
                       <AppButton type="button" onClick={createBrand}>
-                        Salvar
+                        {t("common.save")}
                       </AppButton>
                     </div>
                   </SimpleModal>
@@ -687,7 +687,7 @@ export default function DashboardPage() {
 
             {activeTab === "purchase" && (
               <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h2 className="mb-3 text-lg font-semibold text-slate-900">Registrar compra</h2>
+                <h2 className="mb-3 text-lg font-semibold text-slate-900">{t("dashboard.registerPurchase")}</h2>
                 <PurchaseForm
                   familyId={familyId}
                   onSaved={() => {

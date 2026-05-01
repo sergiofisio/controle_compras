@@ -4,6 +4,8 @@ import { requireAdmin } from "@/server/auth/admin";
 import { User } from "@/server/db/entities/User";
 import { logAccess } from "@/server/logging/audit";
 import { ensureTogglingUserKeepsActiveAdmin } from "@/server/users/admin-safety";
+import { apiT } from "@/i18n/api-translate";
+import { langFromRequest } from "@/i18n/locale-from-request";
 
 export const runtime = "nodejs";
 
@@ -11,17 +13,18 @@ export async function PATCH(req: import("next/server").NextRequest, ctx: { param
   const admin = await requireAdmin(req);
   if (admin.error) return admin.error;
 
+  const lang = langFromRequest(req);
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({} as { isActive?: unknown }));
   if (typeof body.isActive !== "boolean") {
-    return NextResponse.json({ error: "Campo isActive obrigatorio" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.isActiveRequired") }, { status: 400 });
   }
 
   if (admin.user?.id === id && body.isActive === false) {
-    return NextResponse.json({ error: "Nao e permitido desativar sua propria conta admin" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.cannotDeactivateSelfAdmin") }, { status: 400 });
   }
 
-  const safety = await ensureTogglingUserKeepsActiveAdmin(id, body.isActive);
+  const safety = await ensureTogglingUserKeepsActiveAdmin(id, body.isActive, lang);
   if (!safety.ok) {
     return NextResponse.json({ error: safety.error }, { status: 400 });
   }
@@ -30,7 +33,7 @@ export async function PATCH(req: import("next/server").NextRequest, ctx: { param
   const userRepo = db.getRepository(User);
   const user = await userRepo.findOne({ where: { id } });
   if (!user) {
-    return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+    return NextResponse.json({ error: apiT(req, "api.userNotFound") }, { status: 404 });
   }
 
   user.isActive = body.isActive;

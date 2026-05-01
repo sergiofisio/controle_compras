@@ -6,17 +6,20 @@ import { User } from "@/server/db/entities/User";
 import { UserPhone } from "@/server/db/entities/UserPhone";
 import { UserAddress } from "@/server/db/entities/UserAddress";
 import { sessionCookieOptions } from "@/server/auth/cookies";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
 export async function GET(req: import("next/server").NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: apiT(req, "api.unauthorized") }, { status: 401 });
 
   const db = await ensureDb();
   const userRepo = db.getRepository(User);
+  const phoneRepo = db.getRepository(UserPhone);
+  const addressRepo = db.getRepository(UserAddress);
   const user = await userRepo.findOne({ where: { id: session.userId } });
-  if (!user) return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+  if (!user) return NextResponse.json({ error: apiT(req, "api.userNotFound") }, { status: 404 });
   const [phones, addresses] = await Promise.all([
     phoneRepo.find({ where: { userId: user.id }, order: { createdAt: "ASC" } }),
     addressRepo.find({ where: { userId: user.id }, order: { createdAt: "ASC" } }),
@@ -55,12 +58,12 @@ export async function GET(req: import("next/server").NextRequest) {
 
 export async function PUT(req: import("next/server").NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: apiT(req, "api.unauthorized") }, { status: 401 });
 
   const { name, email, phones, addresses, avatarUrl, newPassword } = await req.json();
 
   if (!name || !email) {
-    return NextResponse.json({ error: "Nome e email obrigatorios" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.profileNameEmailRequired") }, { status: 400 });
   }
 
   const db = await ensureDb();
@@ -68,7 +71,7 @@ export async function PUT(req: import("next/server").NextRequest) {
   const phoneRepo = db.getRepository(UserPhone);
   const addressRepo = db.getRepository(UserAddress);
   const user = await userRepo.findOne({ where: { id: session.userId } });
-  if (!user) return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+  if (!user) return NextResponse.json({ error: apiT(req, "api.userNotFound") }, { status: 404 });
 
   const normalizedEmail = String(email).trim().toLowerCase();
   const emailChanged = normalizedEmail !== user.email;
@@ -76,7 +79,7 @@ export async function PUT(req: import("next/server").NextRequest) {
   if (emailChanged) {
     const conflict = await userRepo.findOne({ where: { email: normalizedEmail } });
     if (conflict && conflict.id !== user.id) {
-      return NextResponse.json({ error: "Este e-mail ja esta em uso" }, { status: 409 });
+      return NextResponse.json({ error: apiT(req, "api.emailInUse") }, { status: 409 });
     }
   }
 
@@ -86,7 +89,7 @@ export async function PUT(req: import("next/server").NextRequest) {
 
   if (newPassword) {
     if (String(newPassword).length < 6) {
-      return NextResponse.json({ error: "Nova senha deve ter no minimo 6 caracteres" }, { status: 400 });
+      return NextResponse.json({ error: apiT(req, "api.passwordMinLength") }, { status: 400 });
     }
     user.passwordHash = await bcrypt.hash(String(newPassword), 10);
   }
@@ -94,10 +97,10 @@ export async function PUT(req: import("next/server").NextRequest) {
   const safePhones = Array.isArray(phones) ? phones : [];
   const safeAddresses = Array.isArray(addresses) ? addresses : [];
   if (safePhones.length > 10) {
-    return NextResponse.json({ error: "Limite de 10 telefones por usuario" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.phoneLimit") }, { status: 400 });
   }
   if (safeAddresses.length > 10) {
-    return NextResponse.json({ error: "Limite de 10 enderecos por usuario" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.addressLimit") }, { status: 400 });
   }
 
   await db.transaction(async (trx) => {
@@ -162,7 +165,7 @@ export async function PUT(req: import("next/server").NextRequest) {
   });
 
   const response = NextResponse.json({
-    message: emailChanged ? "Perfil atualizado. Faca login novamente por seguranca." : "Perfil atualizado com sucesso.",
+    message: emailChanged ? apiT(req, "api.profileUpdatedRelogin") : apiT(req, "api.profileUpdatedSuccess"),
     mustRelogin: emailChanged,
   });
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { translate } from "@/i18n/dictionaries";
+import { langFromRequest } from "@/i18n/locale-from-request";
 
 const protectedRoutes = ["/dashboard", "/profile", "/admin"];
 
@@ -80,14 +82,14 @@ export async function middleware(req: NextRequest) {
 
   if (isApiRoute && req.method === "OPTIONS") {
     if (origin && !isAllowedOrigin) {
-      return NextResponse.json({ error: "CORS origin nao permitida" }, { status: 403 });
+      return NextResponse.json({ error: translate(langFromRequest(req), "api.corsOriginNotAllowed") }, { status: 403 });
     }
     const preflight = new NextResponse(null, { status: 204 });
     return origin && isAllowedOrigin ? applyCorsHeaders(preflight, origin) : preflight;
   }
 
   if (isApiRoute && origin && !isAllowedOrigin) {
-    return NextResponse.json({ error: "CORS origin nao permitida" }, { status: 403 });
+    return NextResponse.json({ error: translate(langFromRequest(req), "api.corsOriginNotAllowed") }, { status: 403 });
   }
 
   if (isAdminHost(host) && pathname === "/") {

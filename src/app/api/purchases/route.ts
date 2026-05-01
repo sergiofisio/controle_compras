@@ -6,6 +6,7 @@ import { FamilyMember } from "@/server/db/entities/FamilyMember";
 import { Purchase } from "@/server/db/entities/Purchase";
 import { PurchaseItem } from "@/server/db/entities/PurchaseItem";
 import { PriceHistory } from "@/server/db/entities/PriceHistory";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
@@ -48,16 +49,16 @@ function calculateLine(item: IncomingItem) {
 
 export async function GET(req: import("next/server").NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: apiT(req, "api.unauthorized") }, { status: 401 });
 
   const familyId = req.nextUrl.searchParams.get("familyId");
   const from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
-  if (!familyId) return NextResponse.json({ error: "familyId obrigatorio" }, { status: 400 });
+  if (!familyId) return NextResponse.json({ error: apiT(req, "api.familyIdRequired") }, { status: 400 });
 
   const db = await ensureDb();
   const member = await db.getRepository(FamilyMember).findOne({ where: { familyId, userId: session.userId } });
-  if (!member) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  if (!member) return NextResponse.json({ error: apiT(req, "api.accessDenied") }, { status: 403 });
 
   const purchases =
     from && to
@@ -78,13 +79,13 @@ export async function GET(req: import("next/server").NextRequest) {
 
 export async function POST(req: import("next/server").NextRequest) {
   const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: apiT(req, "api.unauthorized") }, { status: 401 });
 
   const { familyId, storeName, items } = await req.json();
   const db = await ensureDb();
 
   const member = await db.getRepository(FamilyMember).findOne({ where: { familyId, userId: session.userId } });
-  if (!member) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  if (!member) return NextResponse.json({ error: apiT(req, "api.accessDenied") }, { status: 403 });
 
   const purchase = await db.getRepository(Purchase).save(db.getRepository(Purchase).create({ familyId, storeName }));
 

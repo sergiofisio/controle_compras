@@ -8,6 +8,8 @@ import { PasswordResetToken } from "@/server/db/entities/PasswordResetToken";
 import { AccessLog } from "@/server/db/entities/AccessLog";
 import { logAccess } from "@/server/logging/audit";
 import { ensureDeletingUserKeepsAdmin } from "@/server/users/admin-safety";
+import { apiT } from "@/i18n/api-translate";
+import { langFromRequest } from "@/i18n/locale-from-request";
 
 export const runtime = "nodejs";
 
@@ -15,11 +17,12 @@ export async function DELETE(req: import("next/server").NextRequest, ctx: { para
   const admin = await requireAdmin(req);
   if (admin.error) return admin.error;
 
+  const lang = langFromRequest(req);
   const { id } = await ctx.params;
   if (admin.user?.id === id) {
-    return NextResponse.json({ error: "Nao e permitido remover seu proprio usuario admin" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.cannotRemoveSelfAdmin") }, { status: 400 });
   }
-  const adminSafety = await ensureDeletingUserKeepsAdmin(id);
+  const adminSafety = await ensureDeletingUserKeepsAdmin(id, lang);
   if (!adminSafety.ok) {
     return NextResponse.json({ error: adminSafety.error }, { status: 400 });
   }

@@ -17,12 +17,6 @@ type AccessLog = { id: string; action: string; email: string | null; createdAt: 
 type StoreByFamily = { familyId: string; familyName: string; inviteCode: string; storesCount: number; stores: { id: string; name: string; type: string }[] };
 type AdminTab = "overview" | "users" | "stores" | "logs";
 type OverviewSummary = { totalUsers: number; activeUsers: number; inactiveUsers: number; totalAdmins: number; activeAdmins: number };
-const adminTabTitle: Record<AdminTab, string> = {
-  overview: "Admin - Resumo",
-  users: "Admin - Usuarios",
-  stores: "Admin - Supermercados",
-  logs: "Admin - Logs",
-};
 
 export default function AdminPage() {
   const { t } = useI18n();
@@ -84,8 +78,16 @@ export default function AdminPage() {
   }, [loadAll]);
 
   useEffect(() => {
-    document.title = `${adminTabTitle[activeTab]} | Controle Compras`;
-  }, [activeTab]);
+    const tabTitle =
+      activeTab === "overview"
+        ? t("admin.docTitle.overview")
+        : activeTab === "users"
+          ? t("admin.docTitle.users")
+          : activeTab === "stores"
+            ? t("admin.docTitle.stores")
+            : t("admin.docTitle.logs");
+    document.title = `${tabTitle} | ${t("dashboard.docTitleSuffix")}`;
+  }, [activeTab, t]);
 
   async function createUser(e: React.FormEvent) {
     e.preventDefault();
@@ -99,14 +101,14 @@ export default function AdminPage() {
 
     const body = await res.json();
     if (!res.ok) {
-      toast.error(body.error || "Falha ao criar usuario");
+      toast.error(body.error || t("admin.error.createUser"));
       return;
     }
 
     setName("");
     setEmail("");
     setPassword("");
-    toast.success("Usuario criado com sucesso");
+    toast.success(t("admin.success.createUser"));
     await loadAll();
     } finally {
       setCreatingUser(false);
@@ -119,10 +121,10 @@ export default function AdminPage() {
     const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
     const body = await res.json();
     if (!res.ok) {
-      toast.error(body.error || "Falha ao remover usuario");
+      toast.error(body.error || t("admin.error.removeUser"));
       return;
     }
-    toast.success("Usuario removido com sucesso");
+    toast.success(t("admin.success.removeUser"));
     await loadAll();
     } finally {
       setDeletingUserId(null);
@@ -131,7 +133,7 @@ export default function AdminPage() {
 
   async function moveUser(userId: string, sourceFamilyId?: string) {
     if (!moveTargetFamilyId) {
-      toast.error("Selecione a familia de destino");
+      toast.error(t("admin.error.selectFamily"));
       return;
     }
     setMovingUserId(userId);
@@ -144,11 +146,11 @@ export default function AdminPage() {
 
     const body = await res.json();
     if (!res.ok) {
-      toast.error(body.error || "Falha ao mover usuario");
+      toast.error(body.error || t("admin.error.moveUser"));
       return;
     }
 
-    toast.success("Usuario movido com sucesso");
+    toast.success(t("admin.success.moveUser"));
     await loadAll();
     } finally {
       setMovingUserId(null);
@@ -163,10 +165,10 @@ export default function AdminPage() {
     });
     const body = await res.json();
     if (!res.ok) {
-      toast.error(body.error || "Falha ao atualizar status do usuario");
+      toast.error(body.error || t("admin.error.toggleStatus"));
       return;
     }
-    toast.success(isActive ? "Usuario desativado com sucesso" : "Usuario ativado com sucesso");
+    toast.success(isActive ? t("admin.success.deactivated") : t("admin.success.activated"));
     await loadAll();
   }
 
@@ -194,40 +196,40 @@ export default function AdminPage() {
 
         {activeTab === "overview" && (
           <section className="grid gap-3 md:grid-cols-4">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Usuarios</p><p className="text-2xl font-bold text-slate-900">{summary?.totalUsers ?? users.length}</p></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Usuarios ativos</p><p className="text-2xl font-bold text-slate-900">{summary?.activeUsers ?? users.filter((u) => u.isActive).length}</p></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Usuarios inativos</p><p className="text-2xl font-bold text-slate-900">{summary?.inactiveUsers ?? users.filter((u) => !u.isActive).length}</p></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Total de admins</p><p className="text-2xl font-bold text-slate-900">{summary?.totalAdmins ?? users.filter((u) => u.isAdmin).length}</p></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Admins ativos</p><p className="text-2xl font-bold text-slate-900">{summary?.activeAdmins ?? users.filter((u) => u.isAdmin && u.isActive).length}</p></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Familias</p><p className="text-2xl font-bold text-slate-900">{families.length}</p></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Supermercados</p><p className="text-2xl font-bold text-slate-900">{storesByFamily.reduce((acc, cur) => acc + cur.storesCount, 0)}</p></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">Eventos em log</p><p className="text-2xl font-bold text-slate-900">{logs.length}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.users")}</p><p className="text-2xl font-bold text-slate-900">{summary?.totalUsers ?? users.length}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.usersActive")}</p><p className="text-2xl font-bold text-slate-900">{summary?.activeUsers ?? users.filter((u) => u.isActive).length}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.usersInactive")}</p><p className="text-2xl font-bold text-slate-900">{summary?.inactiveUsers ?? users.filter((u) => !u.isActive).length}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.totalAdmins")}</p><p className="text-2xl font-bold text-slate-900">{summary?.totalAdmins ?? users.filter((u) => u.isAdmin).length}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.activeAdmins")}</p><p className="text-2xl font-bold text-slate-900">{summary?.activeAdmins ?? users.filter((u) => u.isAdmin && u.isActive).length}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.families")}</p><p className="text-2xl font-bold text-slate-900">{families.length}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.stores")}</p><p className="text-2xl font-bold text-slate-900">{storesByFamily.reduce((acc, cur) => acc + cur.storesCount, 0)}</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{t("admin.stats.logEvents")}</p><p className="text-2xl font-bold text-slate-900">{logs.length}</p></div>
           </section>
         )}
 
         {activeTab === "users" && (
           <>
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="mb-3 text-lg font-semibold text-slate-900">Adicionar usuario</h2>
+              <h2 className="mb-3 text-lg font-semibold text-slate-900">{t("admin.addUserTitle")}</h2>
               <form className="grid gap-2 md:grid-cols-5" onSubmit={createUser}>
-                <AppInput placeholder="Nome" value={name} onChange={(e) => setName(e.target.value)} />
-                <AppInput placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <AppInput placeholder="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <AppInput placeholder={t("register.name")} value={name} onChange={(e) => setName(e.target.value)} />
+                <AppInput placeholder={t("login.email")} value={email} onChange={(e) => setEmail(e.target.value)} />
+                <AppInput placeholder={t("login.password")} type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <AppSelect value={familyId} onChange={(e) => setFamilyId(e.target.value)}>
-                  <option value="">Sem familia</option>
+                  <option value="">{t("admin.optionNoFamily")}</option>
                   {families.map((family) => (
                     <option key={family.id} value={family.id}>{family.name} ({family.inviteCode})</option>
                   ))}
                 </AppSelect>
-                <AppButton type="submit" loading={creatingUser} loadingText="Criando...">Criar</AppButton>
+                <AppButton type="submit" loading={creatingUser} loadingText={t("admin.creatingUser")}>{t("admin.createUserBtn")}</AppButton>
               </form>
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold text-slate-900">Usuarios cadastrados</h2>
+                <h2 className="text-lg font-semibold text-slate-900">{t("admin.usersListTitle")}</h2>
                 <AppSelect className="max-w-xs" value={moveTargetFamilyId} onChange={(e) => setMoveTargetFamilyId(e.target.value)}>
-                  <option value="">Selecione familia de destino</option>
+                  <option value="">{t("admin.selectDestinationFamily")}</option>
                   {families.map((family) => (
                     <option key={family.id} value={family.id}>
                       {family.name}
@@ -243,22 +245,22 @@ export default function AdminPage() {
                   return (
                     <div key={user.id} className="rounded-xl border border-slate-200 p-3">
                       <p className="font-semibold text-slate-900">
-                        {user.name} {user.isAdmin ? "(admin)" : ""}
+                        {user.name} {user.isAdmin ? t("admin.roleAdmin") : ""}
                       </p>
                       <p className="text-sm text-slate-600">{user.email}</p>
                       <p className={`mt-1 text-xs font-semibold ${user.isActive ? "text-emerald-700" : "text-amber-700"}`}>
-                        Status: {user.isActive ? "Ativo" : "Inativo"}
+                        {t("admin.statusPrefix")} {user.isActive ? t("admin.status.active") : t("admin.status.inactive")}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">Familias: {userMemberships.map((m) => families.find((f) => f.id === m.familyId)?.name || m.familyId).join(", ") || "sem familia"}</p>
+                      <p className="mt-1 text-xs text-slate-500">{t("admin.familiesLabel")} {userMemberships.map((m) => families.find((f) => f.id === m.familyId)?.name || m.familyId).join(", ") || t("admin.noFamily")}</p>
                       <div className="mt-2 flex gap-2">
-                        <AppButton variant="ghost" onClick={() => moveUser(user.id, firstMembership?.familyId)} loading={movingUserId === user.id} loadingText="Movendo...">
-                          Mover
+                        <AppButton variant="ghost" onClick={() => moveUser(user.id, firstMembership?.familyId)} loading={movingUserId === user.id} loadingText={t("admin.movingUser")}>
+                          {t("admin.moveUserShort")}
                         </AppButton>
                         <AppButton variant={user.isActive ? "secondary" : "success"} onClick={() => toggleUserStatus(user.id, user.isActive)}>
-                          {user.isActive ? "Desativar" : "Ativar"}
+                          {user.isActive ? t("admin.deactivate") : t("admin.activate")}
                         </AppButton>
-                        <AppButton variant="danger" onClick={() => deleteUser(user.id)} loading={deletingUserId === user.id} loadingText="Removendo...">
-                          Deletar conta
+                        <AppButton variant="danger" onClick={() => deleteUser(user.id)} loading={deletingUserId === user.id} loadingText={t("admin.removing")}>
+                          {t("admin.deleteAccount")}
                         </AppButton>
                       </div>
                     </div>
@@ -271,13 +273,13 @@ export default function AdminPage() {
 
         {activeTab === "stores" && (
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-lg font-semibold text-slate-900">Supermercados/lojas utilizados por familia</h2>
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">{t("admin.storesSectionTitle")}</h2>
             <div className="space-y-3">
               {storesByFamily.map((item) => (
                 <div key={item.familyId} className="rounded-xl border border-slate-200 p-3">
                   <p className="font-semibold text-slate-900">{item.familyName}</p>
-                  <p className="text-xs text-slate-500">Codigo: {item.inviteCode}</p>
-                  <p className="mt-1 text-sm text-slate-600">Total de lojas: {item.storesCount}</p>
+                  <p className="text-xs text-slate-500">{t("admin.familyCode")} {item.inviteCode}</p>
+                  <p className="mt-1 text-sm text-slate-600">{t("admin.storeCount")} {item.storesCount}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {item.stores.map((s) => (
                       <span key={s.id} className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700">
@@ -293,7 +295,7 @@ export default function AdminPage() {
 
         {activeTab === "logs" && (
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-lg font-semibold text-slate-900">Historico de uso (logs)</h2>
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">{t("admin.logsTitle")}</h2>
             <div className="space-y-2">
               {logs.map((log) => (
                 <div key={log.id} className="rounded-xl border border-slate-200 p-3 text-sm">
@@ -301,7 +303,7 @@ export default function AdminPage() {
                   <p className="text-slate-600">
                     {log.email || "-"} | {new Date(log.createdAt).toLocaleString("pt-BR")}
                   </p>
-                  <p className="text-xs text-slate-500">IP: {log.ip || "-"}</p>
+                  <p className="text-xs text-slate-500">{t("admin.ip")} {log.ip || "-"}</p>
                 </div>
               ))}
             </div>

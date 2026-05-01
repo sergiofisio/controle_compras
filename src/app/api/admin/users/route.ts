@@ -6,6 +6,7 @@ import { User } from "@/server/db/entities/User";
 import { FamilyMember } from "@/server/db/entities/FamilyMember";
 import { Family } from "@/server/db/entities/Family";
 import { logAccess } from "@/server/logging/audit";
+import { apiT } from "@/i18n/api-translate";
 
 export const runtime = "nodejs";
 
@@ -15,7 +16,7 @@ export async function POST(req: import("next/server").NextRequest) {
 
   const { name, email, password, familyId } = await req.json();
   if (!name || !email || !password) {
-    return NextResponse.json({ error: "Campos obrigatorios ausentes" }, { status: 400 });
+    return NextResponse.json({ error: apiT(req, "api.adminMissingFields") }, { status: 400 });
   }
   const normalizedEmail = String(email).trim().toLowerCase();
 
@@ -25,7 +26,7 @@ export async function POST(req: import("next/server").NextRequest) {
   const familyRepo = db.getRepository(Family);
 
   const exists = await userRepo.findOne({ where: { email: normalizedEmail } });
-  if (exists) return NextResponse.json({ error: "Email ja cadastrado" }, { status: 409 });
+  if (exists) return NextResponse.json({ error: apiT(req, "api.emailTaken") }, { status: 409 });
 
   const passwordHash = await bcrypt.hash(password, 10);
   const isAdmin = normalizedEmail === String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
@@ -35,7 +36,7 @@ export async function POST(req: import("next/server").NextRequest) {
     const family = await familyRepo.findOne({ where: { id: familyId } });
     if (!family) {
       await userRepo.delete({ id: user.id });
-      return NextResponse.json({ error: "Familia informada nao existe" }, { status: 400 });
+      return NextResponse.json({ error: apiT(req, "api.familyNotExists") }, { status: 400 });
     }
 
     const existsMembership = await memberRepo.findOne({ where: { familyId, userId: user.id } });

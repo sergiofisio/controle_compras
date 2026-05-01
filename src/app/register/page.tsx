@@ -40,8 +40,8 @@ export default function RegisterPage() {
         return;
       }
 
-      const body = await res.json().catch(() => ({ error: "Falha ao cadastrar" }));
-      const msg = body.error || "Falha ao cadastrar";
+      const body = await res.json().catch(() => ({ error: t("register.error.generic") }));
+      const msg = body.error || t("register.error.generic");
       setError(msg);
       toast.error(msg);
     } finally {
